@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KiranaTrack — Expiry Ledger</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#f4f4f0;
+  --surface:#ffffff;
+  --surface2:#f8f8f5;
+  --black:#0d0d0d;
+  --gray-900:#1a1a1a;
+  --gray-800:#2d2d2d;
+  --gray-700:#444;
+  --gray-600:#666;
+  --gray-500:#888;
+  --gray-400:#aaa;
+  --gray-300:#ccc;
+  --gray-200:#e2e2e2;
+  --gray-100:#f0f0ed;
+  --border:#e0e0dc;
+  /* Semantic */
+  --green:#16a34a;
+  --green-bg:#f0fdf4;
+  --green-border:#bbf7d0;
+  --yellow:#b45309;
+  --yellow-bg:#fffbeb;
+  --yellow-border:#fde68a;
+  --red:#dc2626;
+  --red-bg:#fef2f2;
+  --red-border:#fecaca;
+  /* Nav */
+  --nav:240px;
+  --header:60px;
+  --radius:6px;
+  --radius-lg:10px;
+}
+.dark{
+  --bg:#0d0d0d;
+  --surface:#181818;
+  --surface2:#111;
+  --black:#f0f0f0;
+  --gray-900:#e8e8e8;
+  --gray-800:#ccc;
+  --gray-700:#aaa;
+  --gray-600:#888;
+  --gray-500:#666;
+  --gray-400:#555;
+  --gray-300:#444;
+  --gray-200:#2a2a2a;
+  --gray-100:#1e1e1e;
+  --border:#2a2a2a;
+  --surface:#1a1a1a;
+  --green-bg:#052e16;
+  --green-border:#14532d;
+  --yellow-bg:#1c1410;
+  --yellow-border:#713f12;
+  --red-bg:#1c0a0a;
+  --red-border:#7f1d1d;
+}
+
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--black);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+
+.mono{font-family:'DM Mono',monospace}
+.material-symbols-outlined{font-family:'Material Symbols Outlined';font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-size:20px;line-height:1;user-select:none;display:inline-flex;align-items:center;justify-content:center}
+
+/* ═══ DEVICE PREVIEW ═══ */
+#deviceFrame{
+  width:100%;height:100vh;overflow:hidden;
+  transition:all .4s cubic-bezier(.22,1,.36,1);
+  position:relative;
+}
+#deviceFrame.tablet{
+  max-width:768px;margin:0 auto;
+  box-shadow:0 0 0 12px #1a1a1a,0 0 0 14px #333,0 24px 80px rgba(0,0,0,.4);
+  border-radius:20px;overflow:hidden;height:100vh;
+}
+#deviceFrame.mobile{
+  max-width:390px;margin:0 auto;
+  box-shadow:0 0 0 12px #1a1a1a,0 0 0 14px #333,0 24px 80px rgba(0,0,0,.4);
+  border-radius:40px;overflow:hidden;height:844px;margin-top:calc(50vh - 422px);
+}
+#deviceShell{
+  width:100%;height:100%;overflow:hidden;position:relative;
+  background:var(--bg);display:flex;
+}
+/* device toolbar above */
+#deviceToolbar{
+  position:fixed;top:0;left:0;right:0;height:44px;
+  background:var(--gray-900);z-index:9999;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transform:translateY(-100%);transition:transform .3s ease;
+}
+#deviceToolbar.show{transform:translateY(0)}
+.dev-btn{
+  background:none;border:1.5px solid rgba(255,255,255,.2);color:#fff;
+  padding:5px 14px;border-radius:4px;font:600 11px/1 'DM Sans',sans-serif;
+  letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  display:flex;align-items:center;gap:6px;transition:all .15s;
+}
+.dev-btn:hover,.dev-btn.active{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.5)}
+.dev-btn .material-symbols-outlined{font-size:16px}
+.dev-sep{width:1px;height:20px;background:rgba(255,255,255,.15)}
+
+/* Preview toggle button (always visible) */
+#previewToggle{
+  position:fixed;top:12px;right:16px;z-index:10000;
+  background:var(--black);color:var(--surface);
+  border:none;padding:8px 14px;border-radius:var(--radius);
+  font:700 10px/1 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;display:flex;align-items:center;gap:6px;
+  transition:opacity .15s;box-shadow:0 2px 12px rgba(0,0,0,.2);
+}
+#previewToggle:hover{opacity:.85}
+#previewToggle .material-symbols-outlined{font-size:16px}
+
+/* ═══ SIDEBAR ═══ */
+aside{
+  width:var(--nav);flex-shrink:0;height:100%;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:width .3s ease,transform .3s ease;
+  z-index:100;
+}
+.logo-area{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.logo-mark{font-size:17px;font-weight:700;letter-spacing:-.03em;color:var(--black)}
+.logo-mark span{color:var(--green)}
+.logo-sub{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-500);margin-top:2px}
+
+nav{flex:1;padding:12px 10px;overflow-y:auto}
+.nav-section-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gray-400);padding:8px 10px 6px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:var(--radius);cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--gray-600);
+  transition:all .15s ease;margin-bottom:2px;text-decoration:none;
+  position:relative;
+}
+.nav-item:hover{background:var(--gray-100);color:var(--black)}
+.nav-item.active{background:var(--black);color:#fff}
+.nav-item .material-symbols-outlined{font-size:19px;flex-shrink:0}
+.nav-badge{
+  margin-left:auto;font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:99px;
+  background:var(--red);color:#fff;
+}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.25);color:#fff}
+
+.sidebar-footer{padding:12px 10px;border-top:1px solid var(--border)}
+.btn-add{
+  width:100%;background:var(--black);color:#fff;border:none;
+  padding:12px;border-radius:var(--radius);
+  font:700 11px/1 'DM Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;
+  display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;
+  transition:all .2s;
+}
+.btn-add:hover{opacity:.85;transform:translateY(-1px)}
+.btn-add:active{transform:scale(.98)}
+
+/* ═══ MAIN ═══ */
+.main-area{flex:1;display:flex;flex-direction:column;min-width:0;height:100%;overflow:hidden}
+
+header{
+  height:var(--header);flex-shrink:0;
+  background:rgba(255,255,255,.9);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;gap:16px;
+  transition:background .3s;
+}
+.dark header{background:rgba(24,24,24,.92)}
+.page-title{font-size:17px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+
+.header-right{display:flex;align-items:center;gap:12px}
+.search-bar{
+  display:flex;align-items:center;gap:8px;
+  background:var(--gray-100);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:6px 12px;
+  transition:border-color .2s;width:220px;
+}
+.search-bar:focus-within{border-color:var(--black)}
+.search-bar input{background:none;border:none;outline:none;font:400 13px/1 'DM Sans',sans-serif;color:var(--black);width:100%}
+.search-bar input::placeholder{color:var(--gray-400)}
+.search-bar .material-symbols-outlined{font-size:17px;color:var(--gray-400);flex-shrink:0}
+
+.icon-btn{
+  width:36px;height:36px;background:none;border:1.5px solid var(--border);
+  border-radius:var(--radius);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--gray-600);transition:all .15s;position:relative;
+}
+.icon-btn:hover{border-color:var(--black);color:var(--black);background:var(--gray-100)}
+.icon-btn .material-symbols-outlined{font-size:18px}
+.notif-dot{
+  position:absolute;top:6px;right:6px;width:7px;height:7px;
+  background:var(--red);border-radius:50%;border:2px solid var(--surface);
+}
+
+/* ═══ CONTENT ═══ */
+.content{flex:1;overflow-y:auto;padding:24px;scroll-behavior:smooth}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-track{background:transparent}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ═══ PAGES ═══ */
+.page{display:none;animation:fadeUp .25s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ═══ DATE FILTER BAR ═══ */
+.date-filter-bar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.period-btn{
+  padding:6px 14px;border:1.5px solid var(--border);background:var(--surface);
+  border-radius:var(--radius);font:600 11px/1 'DM Sans',sans-serif;
+  letter-spacing:.04em;cursor:pointer;color:var(--gray-600);
+  transition:all .15s;
+}
+.period-btn:hover{border-color:var(--black);color:var(--black)}
+.period-btn.active{background:var(--black);border-color:var(--black);color:#fff}
+.date-range-wrap{display:flex;align-items:center;gap:6px;margin-left:auto}
+.date-input{
+  border:1.5px solid var(--border);background:var(--surface);
+  padding:6px 10px;border-radius:var(--radius);
+  font:400 12px/1 'DM Mono',monospace;color:var(--black);outline:none;
+  transition:border-color .2s;cursor:pointer;
+}
+.date-input:focus{border-color:var(--black)}
+
+/* ═══ STAT CARDS ═══ */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius-lg);padding:20px;
+  display:flex;flex-direction:column;gap:10px;
+  transition:all .2s;cursor:default;
+  position:relative;overflow:hidden;
+}
+.stat-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+}
+.stat-card.total::after{background:var(--black)}
+.stat-card.expired::after{background:var(--red)}
+.stat-card.soon::after{background:var(--yellow)}
+.stat-card.good::after{background:var(--green)}
+.stat-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08);transform:translateY(-2px)}
+
+.stat-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-500)}
+.stat-value{font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1;font-family:'DM Mono',monospace}
+.stat-value.red{color:var(--red)}
+.stat-value.yellow{color:var(--yellow)}
+.stat-value.green{color:var(--green)}
+.stat-foot{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gray-500)}
+.stat-foot .material-symbols-outlined{font-size:14px}
+
+/* ═══ SECTION HEADER ═══ */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-title{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.sec-link{background:none;border:none;cursor:pointer;font:700 10px/1 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--black);text-decoration:underline;text-underline-offset:3px;transition:opacity .15s}
+.sec-link:hover{opacity:.6}
+
+/* ═══ STATUS BADGES ═══ */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:4px}
+.badge-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-border)}
+.badge-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.badge .material-symbols-outlined{font-size:12px}
+
+/* ═══ ALERT LIST ═══ */
+.alert-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.alert-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .12s;
+  animation:slideIn .3s ease;
+}
+.alert-item:last-child{border-bottom:none}
+.alert-item:hover{background:var(--gray-100)}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.alert-left{display:flex;align-items:center;gap:12px}
+.alert-icon{
+  width:40px;height:40px;border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.ai-red{background:var(--red-bg);color:var(--red)}
+.ai-yellow{background:var(--yellow-bg);color:var(--yellow)}
+.ai-green{background:var(--green-bg);color:var(--green)}
+.alert-name{font-size:13px;font-weight:600}
+.alert-meta{font-size:11px;color:var(--gray-500);margin-top:2px}
+.alert-right{text-align:right;flex-shrink:0}
+.alert-date{font-size:11px;font-family:'DM Mono',monospace;color:var(--gray-500);margin-top:5px}
+
+/* ═══ CHARTS ═══ */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:20px}
+.chart-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-500);margin-bottom:16px}
+.chart-full{grid-column:1/-1}
+
+/* Donut */
+.donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.donut-legend{display:flex;flex-direction:column;gap:10px;flex:1;min-width:100px}
+.legend-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-label{font-size:12px;font-weight:500;color:var(--gray-700);flex:1}
+.legend-val{font-size:12px;font-weight:700;font-family:'DM Mono',monospace}
+
+/* Bar chart */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bar-label{font-size:11px;font-weight:600;width:80px;flex-shrink:0;color:var(--gray-700);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:8px;background:var(--gray-100);border-radius:4px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.22,1,.36,1)}
+.bar-val{font-size:11px;font-family:'DM Mono',monospace;font-weight:600;width:24px;text-align:right;color:var(--gray-600)}
+
+/* Line chart SVG */
+.line-chart-wrap{width:100%;overflow:hidden;border-radius:var(--radius)}
+
+/* Progress rows */
+.prog-row{margin-bottom:14px}
+.prog-hd{display:flex;justify-content:space-between;margin-bottom:5px}
+.prog-name{font-size:12px;font-weight:600}
+.prog-pct{font-size:12px;font-family:'DM Mono',monospace;color:var(--gray-500)}
+.prog-track{height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .9s cubic-bezier(.22,1,.36,1)}
+
+/* ═══ SUGGESTIONS ═══ */
+.sug-list{display:flex;flex-direction:column;gap:10px}
+.sug-card{
+  display:flex;align-items:flex-start;gap:14px;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius-lg);padding:16px 18px;
+  transition:all .2s;cursor:default;
+}
+.sug-card:hover{border-color:var(--black);box-shadow:0 4px 16px rgba(0,0,0,.06)}
+.sug-icon{
+  width:38px;height:38px;border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.sug-icon .material-symbols-outlined{font-size:20px}
+.sug-body{flex:1;min-width:0}
+.sug-title{font-size:13px;font-weight:700;margin-bottom:3px}
+.sug-desc{font-size:12px;color:var(--gray-600);line-height:1.55}
+.sug-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.sug-tag{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px}
+.sug-action{flex-shrink:0;background:var(--black);color:#fff;border:none;padding:8px 14px;border-radius:var(--radius);font:700 10px/1 'DM Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.sug-action:hover{opacity:.8}
+
+/* ═══ TABLE ═══ */
+.table-wrap{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.table-toolbar{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.filter-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.ftab{
+  padding:6px 13px;border:1.5px solid var(--border);background:var(--surface);
+  border-radius:var(--radius);font:700 10px/1 'DM Sans',sans-serif;
+  letter-spacing:.05em;text-transform:uppercase;cursor:pointer;color:var(--gray-600);
+  transition:all .15s;
+}
+.ftab:hover{border-color:var(--black);color:var(--black)}
+.ftab.active{background:var(--black);border-color:var(--black);color:#fff}
+.ftab.red.active{background:var(--red);border-color:var(--red)}
+.ftab.yellow.active{background:var(--yellow);border-color:var(--yellow)}
+.ftab.green.active{background:var(--green);border-color:var(--green)}
+
+.tbl-count{margin-left:auto;font-size:11px;font-weight:600;color:var(--gray-500)}
+
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:600px}
+thead th{
+  padding:10px 16px;text-align:left;
+  font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gray-500);border-bottom:1px solid var(--border);
+  background:var(--surface2);cursor:pointer;user-select:none;
+  white-space:nowrap;
+}
+thead th:hover{color:var(--black)}
+thead th.sort-asc::after{content:' ↑'}
+thead th.sort-desc::after{content:' ↓'}
+tbody tr{transition:background .1s}
+tbody tr:hover{background:var(--gray-100)}
+tbody td{padding:13px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+
+.prod-name{font-weight:600}
+.prod-note{font-size:11px;color:var(--gray-500);margin-top:2px}
+.sku-text{font-size:11px;font-family:'DM Mono',monospace;color:var(--gray-500)}
+
+.cat-pill{
+  display:inline-block;font-size:10px;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;
+  padding:3px 9px;border-radius:3px;
+  background:var(--gray-100);color:var(--gray-700);
+}
+
+.action-row{display:flex;gap:4px}
+.tbl-btn{
+  width:30px;height:30px;background:none;border:1.5px solid var(--border);
+  border-radius:var(--radius);cursor:pointer;color:var(--gray-500);
+  display:flex;align-items:center;justify-content:center;transition:all .12s;
+}
+.tbl-btn:hover{border-color:var(--black);color:var(--black);background:var(--gray-100)}
+.tbl-btn.del:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.tbl-btn .material-symbols-outlined{font-size:16px}
+
+/* ═══ TWO-COL LAYOUT ═══ */
+.two-col{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-bottom:20px}
+
+/* ═══ SETTINGS ═══ */
+.settings-grid{display:grid;grid-template-columns:300px 1fr;gap:20px}
+.s-panel{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:14px}
+.s-panel-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.s-panel-hd h3{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-600)}
+.s-row{padding:15px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.s-row:last-child{border-bottom:none}
+.s-row-name{font-size:13px;font-weight:600}
+.s-row-desc{font-size:11px;color:var(--gray-500);margin-top:2px;line-height:1.4}
+
+/* Toggle */
+.toggle{position:relative;display:inline-block;width:42px;height:23px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.tgl-slider{position:absolute;cursor:pointer;inset:0;background:var(--gray-200);border-radius:12px;transition:background .2s}
+.tgl-slider::before{content:'';position:absolute;width:17px;height:17px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.toggle input:checked+.tgl-slider{background:var(--green)}
+.toggle input:checked+.tgl-slider::before{transform:translateX(19px)}
+
+.s-btn{background:none;border:1.5px solid var(--border);padding:6px 14px;border-radius:var(--radius);font:700 10px/1 'DM Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;color:var(--gray-700);transition:all .15s}
+.s-btn:hover{border-color:var(--black);color:var(--black)}
+.s-btn.danger:hover{border-color:var(--red);color:var(--red)}
+
+/* ═══ PROFILE CARD ═══ */
+.profile-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px 20px;text-align:center;margin-bottom:14px}
+.avatar{
+  width:72px;height:72px;border-radius:50%;
+  background:var(--black);display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px;border:3px solid var(--border);
+}
+.avatar-initials{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.02em}
+.avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.prof-name{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.prof-role{font-size:11px;color:var(--gray-500);margin-top:3px;font-weight:500}
+.prof-store{font-size:11px;color:var(--gray-400);margin-top:2px}
+.prof-actions{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.btn-primary{background:var(--black);color:#fff;border:none;padding:11px;border-radius:var(--radius);font:700 11px/1 'DM Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;width:100%}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:var(--surface);color:var(--black);border:1.5px solid var(--border);padding:10px;border-radius:var(--radius);font:700 11px/1 'DM Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s;width:100%}
+.btn-secondary:hover{border-color:var(--black)}
+
+/* ═══ DEV CARD ═══ */
+.dev-card{
+  background:var(--black);color:#fff;padding:24px 20px;border-radius:var(--radius-lg);
+  position:relative;overflow:hidden;
+}
+.dev-card::before{
+  content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;
+  border:1.5px solid rgba(255,255,255,.08);transform:rotate(45deg);
+  background-image:repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(255,255,255,.03) 5px,rgba(255,255,255,.03) 10px);
+}
+.dev-eyebrow{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px}
+.dev-name{font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.dev-role{font-size:11px;font-weight:500;color:rgba(255,255,255,.45);margin-top:5px;margin-bottom:20px}
+.dev-link{display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.65);text-decoration:none;margin-bottom:9px;transition:color .15s}
+.dev-link:hover{color:#fff}
+.dev-link .material-symbols-outlined{font-size:15px;color:rgba(255,255,255,.3)}
+.dev-socials{display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)}
+.dev-soc{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.45);text-decoration:none;border:1px solid rgba(255,255,255,.12);padding:5px 10px;border-radius:3px;transition:all .15s}
+.dev-soc:hover{color:#fff;border-color:rgba(255,255,255,.4)}
+
+/* ═══ MODALS ═══ */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);
+  z-index:500;display:none;align-items:center;justify-content:center;padding:20px;
+}
+.overlay.open{display:flex}
+.modal{
+  background:var(--surface);border-radius:var(--radius-lg);
+  width:100%;max-width:520px;max-height:90vh;overflow:hidden;
+  display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.2);
+  animation:modalIn .25s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+.modal-hd{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:15px;font-weight:700}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--gray-500);display:flex;padding:4px;border-radius:var(--radius);transition:all .12s}
+.modal-close:hover{background:var(--gray-100);color:var(--black)}
+.modal-body{padding:20px 22px;overflow-y:auto;flex:1}
+.modal-ft{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+.form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-600);margin-bottom:7px}
+.form-input,.form-select{
+  width:100%;padding:9px 12px;border:1.5px solid var(--border);background:var(--surface);
+  border-radius:var(--radius);font:400 13px/1.4 'DM Sans',sans-serif;color:var(--black);outline:none;transition:border-color .2s;
+}
+.form-input:focus,.form-select:focus{border-color:var(--black)}
+.form-input::placeholder{color:var(--gray-400)}
+.form-row{display:flex;gap:8px;align-items:flex-end}
+
+/* Avatar upload in profile modal */
+.avatar-upload{text-align:center;margin-bottom:20px}
+.avatar-upload-ring{
+  width:80px;height:80px;border-radius:50%;background:var(--gray-100);
+  border:2px dashed var(--border);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;margin:0 auto 10px;
+  cursor:pointer;transition:border-color .2s;overflow:hidden;
+}
+.avatar-upload-ring:hover{border-color:var(--black)}
+.avatar-upload-ring .material-symbols-outlined{font-size:24px;color:var(--gray-400)}
+.avatar-upload-ring img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.avatar-upload-label{font-size:11px;color:var(--gray-500);cursor:pointer}
+.avatar-upload-label:hover{color:var(--black);text-decoration:underline}
+
+/* ═══ NOTIFICATION PANEL ═══ */
+.notif-panel{
+  position:fixed;top:var(--header);right:0;width:340px;
+  background:var(--surface);border-left:1.5px solid var(--border);
+  border-bottom:1.5px solid var(--border);border-radius:0 0 0 var(--radius-lg);
+  box-shadow:-4px 8px 32px rgba(0,0,0,.1);z-index:300;
+  transform:translateX(110%);transition:transform .3s cubic-bezier(.22,1,.36,1);
+  max-height:400px;overflow:hidden;display:flex;flex-direction:column;
+}
+.notif-panel.open{transform:none}
+.notif-panel-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.notif-panel-hd h4{font-size:13px;font-weight:700}
+.notif-clear{background:none;border:none;font:600 11px/1 'DM Sans',sans-serif;color:var(--gray-500);cursor:pointer;text-decoration:underline}
+.notif-clear:hover{color:var(--black)}
+.notif-list{overflow-y:auto;flex:1}
+.notif-item{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;gap:10px}
+.notif-item:last-child{border-bottom:none}
+.notif-icon{width:32px;height:32px;border-radius:var(--radius);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.notif-icon .material-symbols-outlined{font-size:16px}
+.notif-content{flex:1;min-width:0}
+.notif-msg{font-size:12px;font-weight:500;line-height:1.4}
+.notif-time{font-size:10px;color:var(--gray-400);margin-top:3px;font-family:'DM Mono',monospace}
+
+/* ═══ TOAST ═══ */
+.toast-stack{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  background:var(--gray-900);color:#fff;padding:12px 16px;
+  border-radius:var(--radius-lg);font-size:13px;font-weight:500;
+  display:flex;align-items:center;gap:9px;
+  animation:toastIn .3s ease;pointer-events:all;
+  max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.25);
+}
+.toast.success{background:var(--green)}
+.toast.error{background:var(--red)}
+.toast.warn{background:var(--yellow)}
+.toast .material-symbols-outlined{font-size:17px}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateY(4px)}}
+
+/* ═══ MOBILE NAV ═══ */
+.mob-bar{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);border-top:1.5px solid var(--border);
+  padding:8px 0 12px;z-index:200;
+  justify-content:space-around;
+}
+.mob-item{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--gray-500);padding:0 10px}
+.mob-item span:last-child{font-size:10px;font-weight:600;letter-spacing:.03em}
+.mob-item .material-symbols-outlined{font-size:22px}
+.mob-item.active{color:var(--black)}
+
+/* ═══ METRIC CARDS (analytics) ═══ */
+.metric-mini{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius-lg);padding:16px;
+  display:flex;align-items:center;gap:12px;
+}
+.metric-icon{width:40px;height:40px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center}
+.metric-icon .material-symbols-outlined{font-size:20px}
+.metric-lbl{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--gray-500);margin-bottom:3px}
+.metric-val{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;letter-spacing:-.02em;line-height:1}
+
+.metrics-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+
+/* ═══ HISTORY ═══ */
+.history-item{
+  display:flex;align-items:flex-start;gap:14px;padding:14px 18px;
+  border-bottom:1px solid var(--border);
+}
+.history-item:last-child{border-bottom:none}
+.hist-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.hist-desc{font-size:13px;font-weight:500}
+.hist-sub{font-size:11px;color:var(--gray-500);margin-top:2px}
+
+/* ═══ EMPTY STATE ═══ */
+.empty{text-align:center;padding:48px 24px}
+.empty .material-symbols-outlined{font-size:44px;color:var(--gray-300);margin-bottom:12px}
+.empty p{font-size:13px;color:var(--gray-500)}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:900px){
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .chart-grid{grid-template-columns:1fr}
+  .chart-full{grid-column:auto}
+  .metrics-4{grid-template-columns:repeat(2,1fr)}
+  .settings-grid{grid-template-columns:1fr}
+  .two-col{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  aside{position:fixed;left:0;top:0;height:100%;transform:translateX(-100%);z-index:200}
+  aside.mob-open{transform:none;box-shadow:4px 0 32px rgba(0,0,0,.15)}
+  .main-area{margin-left:0}
+  .mob-bar{display:flex}
+  .content{padding-bottom:80px}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .header-right .search-bar{display:none}
+  header{padding:0 16px}
+  .content{padding:16px}
+  .form-grid2{grid-template-columns:1fr}
+  .notif-panel{width:100%;border-radius:0}
+}
+
+/* Scrollbar */
+*::-webkit-scrollbar{width:4px;height:4px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* Sparkline */
+.sparkline{display:flex;align-items:flex-end;gap:2px;height:36px;padding:2px 0}
+.spark-bar{flex:1;border-radius:2px 2px 0 0;transition:height .5s ease,background .3s}
+.spark-bar:hover{opacity:.8}
+
+/* Animated number */
+@keyframes countUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.count-anim{animation:countUp .4s ease}
+
+/* Hatch pattern */
+.hatch-bg{background-image:repeating-linear-gradient(45deg,transparent,transparent 6px,rgba(0,0,0,.04) 6px,rgba(0,0,0,.04) 12px)}
+</style>
+</head>
+<body>
+
+<!-- DEVICE TOOLBAR -->
+<div id="deviceToolbar">
+  <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-right:4px">Preview</span>
+  <div class="dev-sep"></div>
+  <button class="dev-btn active" id="btn-desktop" onclick="setDevice('desktop')">
+    <span class="material-symbols-outlined">desktop_windows</span>Desktop
+  </button>
+  <button class="dev-btn" id="btn-tablet" onclick="setDevice('tablet')">
+    <span class="material-symbols-outlined">tablet</span>Tablet
+  </button>
+  <button class="dev-btn" id="btn-mobile" onclick="setDevice('mobile')">
+    <span class="material-symbols-outlined">smartphone</span>Mobile
+  </button>
+  <div class="dev-sep"></div>
+  <button class="dev-btn" onclick="exitPreview()" style="color:#ff7070;border-color:rgba(255,100,100,.3)">
+    <span class="material-symbols-outlined">close</span>Close
+  </button>
+</div>
+
+<!-- PREVIEW TOGGLE -->
+<button id="previewToggle" onclick="openPreview()">
+  <span class="material-symbols-outlined">devices</span>Preview
+</button>
+
+<!-- DEVICE FRAME -->
+<div id="deviceFrame">
+<div id="deviceShell">
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside id="sidebar">
+  <div class="logo-area">
+    <div class="logo-mark">Kirana<span>Track</span></div>
+    <div class="logo-sub">Expiry Ledger</div>
+  </div>
+
+  <nav>
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active" data-page="dashboard" onclick="nav('dashboard')">
+      <span class="material-symbols-outlined">dashboard</span>
+      Dashboard
+      <span class="nav-badge" id="nb-dashboard">0</span>
+    </div>
+    <div class="nav-item" data-page="products" onclick="nav('products')">
+      <span class="material-symbols-outlined">inventory_2</span>
+      Products
+    </div>
+    <div class="nav-section-label" style="margin-top:8px">Insights</div>
+    <div class="nav-item" data-page="analytics" onclick="nav('analytics')">
+      <span class="material-symbols-outlined">monitoring</span>
+      Analytics
+    </div>
+    <div class="nav-item" data-page="history" onclick="nav('history')">
+      <span class="material-symbols-outlined">history</span>
+      History
+    </div>
+    <div class="nav-section-label" style="margin-top:8px">System</div>
+    <div class="nav-item" data-page="settings" onclick="nav('settings')">
+      <span class="material-symbols-outlined">settings</span>
+      Settings
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="btn-add" onclick="openAddModal()">
+      <span class="material-symbols-outlined">add_circle</span>
+      Add Product
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════ MAIN ═══════ -->
+<div class="main-area">
+  <header>
+    <div class="page-title" id="pageTitle">Dashboard</div>
+    <div class="header-right">
+      <div class="search-bar">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" id="gSearch" placeholder="Search products…" oninput="globalSearch(this.value)"/>
+      </div>
+      <button class="icon-btn" id="notifBtn" onclick="toggleNotif()" title="Notifications">
+        <span class="material-symbols-outlined">notifications</span>
+        <div class="notif-dot" id="notifDot"></div>
+      </button>
+      <button class="icon-btn" onclick="nav('settings')" title="Profile">
+        <span class="material-symbols-outlined">account_circle</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="content" id="mainContent">
+
+    <!-- ═══ DASHBOARD PAGE ═══ -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- Date Filter Bar -->
+      <div class="date-filter-bar">
+        <button class="period-btn active" data-period="all" onclick="setPeriod('all',this)">All Time</button>
+        <button class="period-btn" data-period="today" onclick="setPeriod('today',this)">Today</button>
+        <button class="period-btn" data-period="week" onclick="setPeriod('week',this)">This Week</button>
+        <button class="period-btn" data-period="month" onclick="setPeriod('month',this)">This Month</button>
+        <button class="period-btn" data-period="year" onclick="setPeriod('year',this)">This Year</button>
+        <div class="date-range-wrap">
+          <span style="font-size:11px;color:var(--gray-400);font-weight:600">Custom:</span>
+          <input type="date" class="date-input" id="dateFrom" onchange="setCustomRange()"/>
+          <span style="font-size:11px;color:var(--gray-400)">–</span>
+          <input type="date" class="date-input" id="dateTo" onchange="setCustomRange()"/>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="stat-grid">
+        <div class="stat-card total">
+          <div class="stat-label">Total Products</div>
+          <div class="stat-value" id="s-total">—</div>
+          <div class="stat-foot">
+            <span class="material-symbols-outlined">inventory_2</span>
+            <span id="s-cats">across — categories</span>
+          </div>
+        </div>
+        <div class="stat-card expired">
+          <div class="stat-label">Expired</div>
+          <div class="stat-value red" id="s-expired">—</div>
+          <div class="stat-foot">
+            <span class="material-symbols-outlined" style="color:var(--red)">error</span>
+            <span>Remove immediately</span>
+          </div>
+        </div>
+        <div class="stat-card soon">
+          <div class="stat-label">Expiring Soon</div>
+          <div class="stat-value yellow" id="s-soon">—</div>
+          <div class="stat-foot">
+            <span class="material-symbols-outlined" style="color:var(--yellow)">schedule</span>
+            <span>Within 7 days</span>
+          </div>
+        </div>
+        <div class="stat-card good">
+          <div class="stat-label">Good Condition</div>
+          <div class="stat-value green" id="s-good">—</div>
+          <div class="stat-foot">
+            <span class="material-symbols-outlined" style="color:var(--green)">check_circle</span>
+            <span id="s-pct">—% of stock</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alert list + Health -->
+      <div class="two-col">
+        <div>
+          <div class="sec-hd">
+            <div class="sec-title">🔴 Alerts Requiring Action</div>
+            <button class="sec-link" onclick="nav('products')">View All →</button>
+          </div>
+          <div class="alert-wrap" id="dash-alerts"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <!-- Donut Chart -->
+          <div class="chart-card">
+            <div class="chart-title">Inventory Health Overview</div>
+            <div class="donut-wrap">
+              <svg id="donutSvg" width="110" height="110" viewBox="0 0 40 40">
+                <circle cx="20" cy="20" r="16" fill="none" stroke="var(--gray-100)" stroke-width="5"/>
+                <circle id="donut-expired" cx="20" cy="20" r="16" fill="none" stroke="#dc2626" stroke-width="5" stroke-dasharray="0 100" stroke-linecap="butt" transform="rotate(-90 20 20)"/>
+                <circle id="donut-soon" cx="20" cy="20" r="16" fill="none" stroke="#b45309" stroke-width="5" stroke-dasharray="0 100" stroke-linecap="butt" transform="rotate(-90 20 20)"/>
+                <circle id="donut-good" cx="20" cy="20" r="16" fill="none" stroke="#16a34a" stroke-width="5" stroke-dasharray="0 100" stroke-linecap="butt" transform="rotate(-90 20 20)"/>
+                <text x="20" y="18" text-anchor="middle" font-size="6" font-weight="700" fill="var(--black)" font-family="DM Mono,monospace" id="donut-pct-text">—%</text>
+                <text x="20" y="24" text-anchor="middle" font-size="3" fill="var(--gray-500)" font-family="DM Sans,sans-serif">HEALTH</text>
+              </svg>
+              <div class="donut-legend">
+                <div class="legend-row"><div class="legend-dot" style="background:#16a34a"></div><span class="legend-label">Good</span><span class="legend-val" id="leg-good">—</span></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#b45309"></div><span class="legend-label">Soon</span><span class="legend-val" id="leg-soon">—</span></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#dc2626"></div><span class="legend-label">Expired</span><span class="legend-val" id="leg-exp">—</span></div>
+              </div>
+            </div>
+          </div>
+          <!-- Sparkline trend -->
+          <div class="chart-card">
+            <div class="chart-title">6-Week Stock Health Trend</div>
+            <div class="sparkline" id="sparkline"></div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px">
+              <span style="font-size:10px;color:var(--gray-400)">6w ago</span>
+              <span style="font-size:10px;color:var(--gray-400)">Now</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Business Advisor Preview -->
+      <div class="sec-hd">
+        <div class="sec-title">💡 Business Advisor</div>
+        <button class="sec-link" onclick="nav('analytics')">Full Report →</button>
+      </div>
+      <div class="sug-list" id="dash-suggestions"></div>
+    </div>
+
+    <!-- ═══ PRODUCTS PAGE ═══ -->
+    <div class="page" id="page-products">
+      <div class="sec-hd">
+        <div class="sec-title">Product Inventory</div>
+        <button class="btn-primary" style="width:auto;padding:10px 18px;font-size:11px;border-radius:var(--radius)" onclick="openAddModal()">+ Add Product</button>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="date-filter-bar">
+        <button class="period-btn active" data-period="all" onclick="setPeriodProd('all',this)">All Time</button>
+        <button class="period-btn" data-period="today" onclick="setPeriodProd('today',this)">Today</button>
+        <button class="period-btn" data-period="week" onclick="setPeriodProd('week',this)">This Week</button>
+        <button class="period-btn" data-period="month" onclick="setPeriodProd('month',this)">This Month</button>
+        <button class="period-btn" data-period="year" onclick="setPeriodProd('year',this)">This Year</button>
+        <div class="date-range-wrap">
+          <input type="date" class="date-input" id="pDateFrom" onchange="setPeriodProd('custom',null)"/>
+          <span style="font-size:11px;color:var(--gray-400)">–</span>
+          <input type="date" class="date-input" id="pDateTo" onchange="setPeriodProd('custom',null)"/>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <div class="filter-tabs">
+            <button class="ftab active" onclick="filterTbl('all',this)">All</button>
+            <button class="ftab green" onclick="filterTbl('good',this)">🟢 Good</button>
+            <button class="ftab yellow" onclick="filterTbl('soon',this)">🟡 Expiring Soon</button>
+            <button class="ftab red" onclick="filterTbl('expired',this)">🔴 Expired</button>
+          </div>
+          <span class="tbl-count" id="tbl-count">— products</span>
+        </div>
+        <div class="tbl-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortTable('name')">Product Name</th>
+                <th onclick="sortTable('sku')">SKU</th>
+                <th onclick="sortTable('category')">Category</th>
+                <th onclick="sortTable('qty')">Qty</th>
+                <th onclick="sortTable('expiry')">Expiry Date</th>
+                <th onclick="sortTable('status')">Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ANALYTICS PAGE ═══ -->
+    <div class="page" id="page-analytics">
+      <div class="sec-hd"><div class="sec-title">Analytics & Reports</div>
+        <div class="date-filter-bar" style="margin:0;gap:6px">
+          <button class="period-btn active" onclick="setAnalyticsPeriod('all',this)">All</button>
+          <button class="period-btn" onclick="setAnalyticsPeriod('week',this)">Week</button>
+          <button class="period-btn" onclick="setAnalyticsPeriod('month',this)">Month</button>
+          <button class="period-btn" onclick="setAnalyticsPeriod('year',this)">Year</button>
+        </div>
+      </div>
+
+      <!-- Metric Mini Cards -->
+      <div class="metrics-4" id="metric-cards"></div>
+
+      <div class="chart-grid">
+        <!-- Category breakdown bar chart -->
+        <div class="chart-card">
+          <div class="chart-title">Products by Category</div>
+          <div id="cat-chart"></div>
+        </div>
+        <!-- Status donut -->
+        <div class="chart-card">
+          <div class="chart-title">Status Distribution</div>
+          <div class="donut-wrap" id="status-donut-wrap">
+            <svg id="statusDonut" width="110" height="110" viewBox="0 0 40 40">
+              <circle cx="20" cy="20" r="16" fill="none" stroke="var(--gray-100)" stroke-width="5"/>
+              <circle id="sd-good" cx="20" cy="20" r="16" fill="none" stroke="#16a34a" stroke-width="5" stroke-dasharray="0 100" transform="rotate(-90 20 20)"/>
+              <circle id="sd-soon" cx="20" cy="20" r="16" fill="none" stroke="#b45309" stroke-width="5" stroke-dasharray="0 100" transform="rotate(-90 20 20)"/>
+              <circle id="sd-exp" cx="20" cy="20" r="16" fill="none" stroke="#dc2626" stroke-width="5" stroke-dasharray="0 100" transform="rotate(-90 20 20)"/>
+              <text x="20" y="21" text-anchor="middle" font-size="5" font-weight="700" fill="var(--black)" font-family="DM Mono,monospace" id="sd-center">—</text>
+            </svg>
+            <div id="status-legend"></div>
+          </div>
+        </div>
+        <!-- Line chart -->
+        <div class="chart-card chart-full">
+          <div class="chart-title">Monthly Health Trend (Last 6 Months)</div>
+          <div class="line-chart-wrap">
+            <svg id="linechart" width="100%" height="120" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            <span id="lc-m1" style="font-size:10px;color:var(--gray-400)"></span>
+            <span id="lc-m6" style="font-size:10px;color:var(--gray-400)"></span>
+          </div>
+        </div>
+        <!-- Category health bars -->
+        <div class="chart-card">
+          <div class="chart-title">Category Health %</div>
+          <div id="cat-health-bars"></div>
+        </div>
+        <!-- Expiry timeline -->
+        <div class="chart-card">
+          <div class="chart-title">Expiry Timeline (Next 30 Days)</div>
+          <div id="expiry-timeline"></div>
+        </div>
+      </div>
+
+      <!-- Business Advisor Full -->
+      <div class="sec-hd" style="margin-top:8px">
+        <div class="sec-title">🧠 Business Advisor — Smart Suggestions</div>
+        <span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:var(--black);color:#fff;padding:4px 10px;border-radius:3px">AI-Powered</span>
+      </div>
+      <div class="sug-list" id="full-suggestions"></div>
+    </div>
+
+    <!-- ═══ HISTORY PAGE ═══ -->
+    <div class="page" id="page-history">
+      <div class="sec-hd">
+        <div class="sec-title">Activity History</div>
+        <button class="s-btn" onclick="clearHistory()">Clear History</button>
+      </div>
+      <div class="date-filter-bar">
+        <button class="period-btn active" onclick="setHistPeriod('all',this)">All</button>
+        <button class="period-btn" onclick="setHistPeriod('today',this)">Today</button>
+        <button class="period-btn" onclick="setHistPeriod('week',this)">This Week</button>
+        <button class="period-btn" onclick="setHistPeriod('month',this)">This Month</button>
+      </div>
+      <div class="alert-wrap" id="history-list"></div>
+    </div>
+
+    <!-- ═══ SETTINGS PAGE ═══ -->
+    <div class="page" id="page-settings">
+      <div class="settings-grid">
+        <!-- Left -->
+        <div>
+          <div class="profile-card" id="profileCard">
+            <div class="avatar" id="avatarDisp">
+              <div class="avatar-initials" id="avatarInitials">RS</div>
+            </div>
+            <div class="prof-name" id="dispName">Rajeshwar Shingade</div>
+            <div class="prof-role" id="dispRole">Data Analyst</div>
+            <div class="prof-store" id="dispStore">KiranaTrack Store</div>
+            <div class="prof-actions">
+              <button class="btn-primary" onclick="openProfileModal()">✏️ Edit Profile</button>
+              <button class="btn-secondary" onclick="exportCSV()">⬇️ Export Data</button>
+              <button class="btn-secondary" style="border-color:var(--red-border);color:var(--red)" onclick="confirmSignOut()">Sign Out</button>
+            </div>
+          </div>
+          <!-- Developer Card -->
+          <div class="dev-card">
+            <div class="dev-eyebrow">Developer Identity</div>
+            <div class="dev-name">Rajeshwar Shingade</div>
+            <div class="dev-role">Data Analyst</div>
+            <a class="dev-link" href="mailto:shingade27r@gmail.com">
+              <span class="material-symbols-outlined">mail</span>
+              shingade27r@gmail.com
+            </a>
+            <a class="dev-link" href="https://rajeshwarshingade.me" target="_blank">
+              <span class="material-symbols-outlined">language</span>
+              rajeshwarshingade.me
+            </a>
+            <div class="dev-socials">
+              <a class="dev-soc" href="https://linkedin.com/in/rajeshwarshingade" target="_blank">LinkedIn</a>
+              <a class="dev-soc" href="https://github.com/rajeshwarshingade" target="_blank">GitHub</a>
+            </div>
+          </div>
+        </div>
+        <!-- Right -->
+        <div>
+          <div class="s-panel">
+            <div class="s-panel-hd"><h3>Account Settings</h3><span style="font-size:9px;font-weight:700;letter-spacing:.1em;background:var(--green-bg);color:var(--green);padding:3px 8px;border-radius:3px">Secure</span></div>
+            <div class="s-row">
+              <div><div class="s-row-name">Email Notifications</div><div class="s-row-desc">Daily summary of expiring stock.</div></div>
+              <label class="toggle"><input type="checkbox" checked id="tog-email"/><span class="tgl-slider"></span></label>
+            </div>
+            <div class="s-row">
+              <div><div class="s-row-name">Dark Mode</div><div class="s-row-desc">High-contrast dark interface.</div></div>
+              <label class="toggle"><input type="checkbox" id="tog-dark" onchange="toggleDark(this)"/><span class="tgl-slider"></span></label>
+            </div>
+            <div class="s-row">
+              <div><div class="s-row-name">Expiry Alerts</div><div class="s-row-desc">Push alerts 7 days before expiry.</div></div>
+              <label class="toggle"><input type="checkbox" checked id="tog-alerts"/><span class="tgl-slider"></span></label>
+            </div>
+            <div class="s-row">
+              <div><div class="s-row-name">Two-Factor Authentication</div><div class="s-row-desc">Highly recommended for security.</div></div>
+              <button class="s-btn" onclick="toast('2FA setup coming soon.','warn')">Configure</button>
+            </div>
+          </div>
+
+          <div class="s-panel">
+            <div class="s-panel-hd"><h3>Notification Settings</h3></div>
+            <div class="s-row">
+              <div><div class="s-row-name">Expiry Warning Threshold</div><div class="s-row-desc">Days before expiry to show warning.</div></div>
+              <select class="form-select" style="width:80px" id="thresholdSelect" onchange="updateThreshold(this.value)">
+                <option value="3">3 days</option>
+                <option value="7" selected>7 days</option>
+                <option value="14">14 days</option>
+                <option value="30">30 days</option>
+              </select>
+            </div>
+            <div class="s-row">
+              <div><div class="s-row-name">Sound Alerts</div><div class="s-row-desc">Play sound on new alerts.</div></div>
+              <label class="toggle"><input type="checkbox" id="tog-sound"/><span class="tgl-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="s-panel">
+            <div class="s-panel-hd"><h3>Data Management</h3></div>
+            <div class="s-row">
+              <div><div class="s-row-name">Export Inventory</div><div class="s-row-desc">Download all records as CSV.</div></div>
+              <button class="s-btn" onclick="exportCSV()">Export CSV</button>
+            </div>
+            <div class="s-row">
+              <div><div class="s-row-name">Export Analytics</div><div class="s-row-desc">Download analytics report as CSV.</div></div>
+              <button class="s-btn" onclick="exportAnalytics()">Export Report</button>
+            </div>
+            <div class="s-row">
+              <div><div class="s-row-name">Clear Expired Records</div><div class="s-row-desc">Remove all expired products from ledger.</div></div>
+              <button class="s-btn danger" onclick="clearExpired()">Clear</button>
+            </div>
+            <div class="s-row">
+              <div><div class="s-row-name">Reset to Sample Data</div><div class="s-row-desc">Restore original demo inventory.</div></div>
+              <button class="s-btn" onclick="resetData()">Reset</button>
+            </div>
+          </div>
+
+          <div class="s-panel">
+            <div class="s-panel-hd"><h3>Application Info</h3></div>
+            <div class="s-row"><div><div class="s-row-name">Version</div></div><span class="mono" style="font-size:12px;color:var(--gray-500)">v2.0.0</span></div>
+            <div class="s-row"><div><div class="s-row-name">Build Date</div></div><span class="mono" style="font-size:12px;color:var(--gray-500)">2026-05-02</span></div>
+            <div class="s-row"><div><div class="s-row-name">License</div></div><span style="font-size:12px;color:var(--gray-500)">MIT Open Source</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /content -->
+</div><!-- /main-area -->
+
+</div><!-- /deviceShell -->
+</div><!-- /deviceFrame -->
+
+<!-- MOBILE NAV -->
+<div class="mob-bar" id="mobBar">
+  <button class="mob-item active" id="mob-dashboard" onclick="nav('dashboard')">
+    <span class="material-symbols-outlined">dashboard</span><span>Home</span>
+  </button>
+  <button class="mob-item" id="mob-products" onclick="nav('products')">
+    <span class="material-symbols-outlined">inventory_2</span><span>Stock</span>
+  </button>
+  <button class="mob-item" id="mob-analytics" onclick="nav('analytics')">
+    <span class="material-symbols-outlined">monitoring</span><span>Analytics</span>
+  </button>
+  <button class="mob-item" id="mob-history" onclick="nav('history')">
+    <span class="material-symbols-outlined">history</span><span>History</span>
+  </button>
+  <button class="mob-item" id="mob-settings" onclick="nav('settings')">
+    <span class="material-symbols-outlined">person</span><span>Profile</span>
+  </button>
+</div>
+
+<!-- NOTIFICATION PANEL -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-hd">
+    <h4>Notifications</h4>
+    <button class="notif-clear" onclick="clearNotifs()">Mark all read</button>
+  </div>
+  <div class="notif-list" id="notifList"></div>
+</div>
+
+<!-- ADD/EDIT PRODUCT MODAL -->
+<div class="overlay" id="prodOverlay" onclick="closeOnBg(event,'prodOverlay')">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title" id="modalTitle">Add Product</div>
+      <button class="modal-close" onclick="closeProdModal()"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid2">
+        <div class="form-group">
+          <label class="form-label">Product Name *</label>
+          <input class="form-input" id="f-name" placeholder="e.g. Organic Whole Milk"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">SKU</label>
+          <input class="form-input" id="f-sku" placeholder="Auto-generated"/>
+        </div>
+      </div>
+      <div class="form-grid2">
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select class="form-select" id="f-cat">
+            <option value="">Select category…</option>
+            <option>Dairy</option><option>Spices</option><option>Grains</option>
+            <option>Snacks</option><option>Beverages</option><option>Personal Care</option>
+            <option>Household</option><option>Oils</option><option>Condiments</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <input class="form-input" id="f-qty" type="number" placeholder="1" min="0"/>
+        </div>
+      </div>
+      <div class="form-grid2">
+        <div class="form-group">
+          <label class="form-label">Manufacture Date</label>
+          <input class="form-input" id="f-mfg" type="date"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Expiry Date *</label>
+          <input class="form-input" id="f-exp" type="date"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Purchase Price (₹)</label>
+        <input class="form-input" id="f-price" type="number" placeholder="0.00" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input class="form-input" id="f-notes" placeholder="Optional notes…"/>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-secondary" style="width:auto;padding:10px 18px" onclick="closeProdModal()">Cancel</button>
+      <button class="btn-primary" style="width:auto;padding:10px 20px" onclick="saveProd()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE EDIT MODAL -->
+<div class="overlay" id="profileOverlay" onclick="closeOnBg(event,'profileOverlay')">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-title">Edit Profile</div>
+      <button class="modal-close" onclick="closeProfileModal()"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="avatar-upload">
+        <div class="avatar-upload-ring" id="avatarUploadRing" onclick="document.getElementById('avatarFile').click()">
+          <span class="material-symbols-outlined" id="avatarUploadIcon">photo_camera</span>
+          <img id="avatarUploadImg" style="display:none"/>
+        </div>
+        <div class="avatar-upload-label" onclick="document.getElementById('avatarFile').click()">Click to change photo</div>
+        <input type="file" id="avatarFile" accept="image/*" style="display:none" onchange="handleAvatar(this)"/>
+      </div>
+      <div class="form-grid2">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input class="form-input" id="pf-fname" value="Rajeshwar"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input class="form-input" id="pf-lname" value="Shingade"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role / Designation</label>
+        <input class="form-input" id="pf-role" value="Data Analyst"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Store Name</label>
+        <input class="form-input" id="pf-store" value="KiranaTrack Store"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="pf-email" type="email" value="shingade27r@gmail.com"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="form-input" id="pf-phone" placeholder="+91 00000 00000"/>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-secondary" style="width:auto;padding:10px 18px" onclick="closeProfileModal()">Cancel</button>
+      <button class="btn-primary" style="width:auto;padding:10px 20px" onclick="saveProfile()">Save Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST STACK -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   DATA & STATE
+══════════════════════════════════════════════ */
+const SEED=[
+  {id:1,name:'Organic Whole Milk 1L',sku:'MK-293-A',category:'Dairy',qty:24,mfg:'2026-04-01',expiry:'2026-04-20',price:52,notes:''},
+  {id:2,name:'Cheddar Cheese 200g',sku:'CH-441-B',category:'Dairy',qty:12,mfg:'2026-04-10',expiry:'2026-05-03',price:180,notes:''},
+  {id:3,name:'Greek Yogurt Multi-pack',sku:'YG-902-C',category:'Dairy',qty:8,mfg:'2026-04-20',expiry:'2026-05-06',price:95,notes:'Low stock'},
+  {id:4,name:'Basmati Rice 5kg',sku:'RC-101-A',category:'Grains',qty:50,mfg:'2025-06-01',expiry:'2027-01-15',price:320,notes:''},
+  {id:5,name:'Whole Wheat Flour 2kg',sku:'FL-210-B',category:'Grains',qty:30,mfg:'2025-09-01',expiry:'2026-09-30',price:85,notes:''},
+  {id:6,name:'Turmeric Powder 100g',sku:'SP-330-A',category:'Spices',qty:20,mfg:'2025-06-01',expiry:'2026-12-01',price:45,notes:''},
+  {id:7,name:'Cumin Seeds 200g',sku:'SP-331-B',category:'Spices',qty:15,mfg:'2025-05-01',expiry:'2026-11-15',price:80,notes:''},
+  {id:8,name:'Potato Chips 50g',sku:'SN-450-A',category:'Snacks',qty:60,mfg:'2026-03-01',expiry:'2026-06-15',price:20,notes:''},
+  {id:9,name:'Mixed Namkeen 250g',sku:'SN-451-B',category:'Snacks',qty:40,mfg:'2026-03-15',expiry:'2026-05-25',price:35,notes:''},
+  {id:10,name:'Masala Tea 100g',sku:'BV-110-A',category:'Beverages',qty:25,mfg:'2025-12-01',expiry:'2026-08-20',price:65,notes:''},
+  {id:11,name:'Mango Squash 750ml',sku:'BV-220-B',category:'Beverages',qty:18,mfg:'2025-11-01',expiry:'2026-05-15',price:120,notes:'Summer stock'},
+  {id:12,name:'Coconut Oil 500ml',sku:'OL-550-A',category:'Oils',qty:10,mfg:'2025-07-01',expiry:'2026-07-10',price:180,notes:''},
+  {id:13,name:'Shampoo 400ml',sku:'PC-600-A',category:'Personal Care',qty:8,mfg:'2024-03-01',expiry:'2027-03-01',price:220,notes:''},
+  {id:14,name:'Detergent Bar 200g',sku:'HH-700-A',category:'Household',qty:35,mfg:'2024-01-01',expiry:'2028-01-01',price:30,notes:'Bulk stock'},
+  {id:15,name:'Paneer 250g',sku:'DA-800-A',category:'Dairy',qty:6,mfg:'2026-04-25',expiry:'2026-04-28',price:70,notes:'Fresh'},
+  {id:16,name:'Red Chilli Powder',sku:'SP-332-C',category:'Spices',qty:25,mfg:'2025-08-01',expiry:'2026-10-01',price:55,notes:''},
+  {id:17,name:'Sunflower Oil 1L',sku:'OL-551-B',category:'Oils',qty:22,mfg:'2025-10-01',expiry:'2026-10-30',price:145,notes:''},
+  {id:18,name:'Tomato Ketchup 500g',sku:'CD-100-A',category:'Condiments',qty:14,mfg:'2025-08-15',expiry:'2026-05-10',price:85,notes:''},
+  {id:19,name:'Soy Sauce 200ml',sku:'CD-101-B',category:'Condiments',qty:8,mfg:'2024-06-01',expiry:'2026-06-01',price:65,notes:''},
+  {id:20,name:'Amla Candy 200g',sku:'SN-452-C',category:'Snacks',qty:30,mfg:'2026-01-01',expiry:'2026-12-31',price:40,notes:''},
+];
+
+let products = JSON.parse(localStorage.getItem('kt2_prods')||'null') || SEED.map(p=>({...p}));
+let history  = JSON.parse(localStorage.getItem('kt2_hist')||'[]');
+let profile  = JSON.parse(localStorage.getItem('kt2_prof')||'null') || {fname:'Rajeshwar',lname:'Shingade',role:'Data Analyst',store:'KiranaTrack Store',email:'shingade27r@gmail.com',phone:'',avatar:null};
+let editId   = null;
+let tblFilter= 'all';
+let tblSort  = {col:'expiry',dir:'asc'};
+let warnDays = 7;
+let activePeriod='all', activeCustomFrom=null, activeCustomTo=null;
+let prodPeriod='all', prodCustomFrom=null, prodCustomTo=null;
+
+function persist(){
+  localStorage.setItem('kt2_prods',JSON.stringify(products));
+  localStorage.setItem('kt2_hist',JSON.stringify(history));
+  localStorage.setItem('kt2_prof',JSON.stringify(profile));
+}
+
+/* ══════════════════════════════════════════════
+   STATUS
+══════════════════════════════════════════════ */
+function status(expiry){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const d=new Date(expiry);
+  const diff=Math.floor((d-today)/86400000);
+  if(diff<0)return{k:'expired',label:'Expired',days:diff};
+  if(diff<=warnDays)return{k:'soon',label:`${diff}d left`,days:diff};
+  return{k:'good',label:'Good',days:diff};
+}
+function fmtDate(iso){return new Date(iso).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
+function fmtRel(ts){
+  const d=Date.now()-ts, m=Math.floor(d/60000);
+  if(m<1)return'Just now'; if(m<60)return`${m}m ago`;
+  const h=Math.floor(m/60); if(h<24)return`${h}h ago`;
+  return fmtDate(new Date(ts).toISOString().split('T')[0]);
+}
+
+/* ══════════════════════════════════════════════
+   PERIOD FILTER
+══════════════════════════════════════════════ */
+function inPeriod(iso,period,from,to){
+  if(period==='all')return true;
+  const d=new Date(iso); const now=new Date();
+  if(period==='today'){const t=new Date();t.setHours(0,0,0,0);const t2=new Date(t);t2.setHours(23,59,59);return d>=t&&d<=t2;}
+  if(period==='week'){const t=new Date();t.setDate(t.getDate()-t.getDay());t.setHours(0,0,0,0);return d>=t;}
+  if(period==='month'){return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}
+  if(period==='year'){return d.getFullYear()===now.getFullYear();}
+  if(period==='custom'&&from&&to){return d>=new Date(from)&&d<=new Date(to);}
+  return true;
+}
+function filteredProds(period,from,to){
+  return products.filter(p=>inPeriod(p.expiry,period,from,to)||inPeriod(p.expiry,'all',null,null)/* always show based on expiry */);
+}
+
+/* ══════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════ */
+const titles={dashboard:'Dashboard',products:'Products',analytics:'Analytics & Reports',history:'Activity History',settings:'Settings'};
+function nav(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.mob-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  const mi=document.getElementById('mob-'+page); if(mi)mi.classList.add('active');
+  document.getElementById('pageTitle').textContent=titles[page]||page;
+  closeNotif();
+  if(page==='dashboard')renderDash();
+  if(page==='products')renderTable();
+  if(page==='analytics')renderAnalytics();
+  if(page==='history')renderHistory();
+  if(page==='settings')renderProfile();
+}
+
+/* ══════════════════════════════════════════════
+   PERIOD CONTROLS
+══════════════════════════════════════════════ */
+function setPeriod(p,btn){
+  activePeriod=p; activeCustomFrom=null; activeCustomTo=null;
+  document.querySelectorAll('#page-dashboard .period-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderDash();
+}
+function setCustomRange(){
+  activeCustomFrom=document.getElementById('dateFrom').value;
+  activeCustomTo=document.getElementById('dateTo').value;
+  if(activeCustomFrom&&activeCustomTo){activePeriod='custom';renderDash();}
+}
+function setPeriodProd(p,btn){
+  prodPeriod=p;
+  if(btn){document.querySelectorAll('#page-products .period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+  prodCustomFrom=document.getElementById('pDateFrom').value||null;
+  prodCustomTo=document.getElementById('pDateTo').value||null;
+  renderTable();
+}
+function setAnalyticsPeriod(p,btn){
+  document.querySelectorAll('#page-analytics .period-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderAnalytics();
+}
+function setHistPeriod(p,btn){
+  document.querySelectorAll('#page-history .period-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderHistory(p);
+}
+
+/* ══════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════ */
+function renderDash(){
+  const list=products;
+  const expired=list.filter(p=>status(p.expiry).k==='expired').length;
+  const soon=list.filter(p=>status(p.expiry).k==='soon').length;
+  const good=list.length-expired-soon;
+  const pct=list.length?Math.round(good/list.length*100):0;
+  const cats=[...new Set(list.map(p=>p.category))].length;
+
+  animateNum('s-total',list.length);
+  animateNum('s-expired',expired);
+  animateNum('s-soon',soon);
+  animateNum('s-good',good);
+  document.getElementById('s-pct').textContent=pct+'% of stock';
+  document.getElementById('s-cats').textContent=`across ${cats} categories`;
+  document.getElementById('nb-dashboard').textContent=expired+soon;
+
+  // Update notifications badge
+  document.getElementById('notifDot').style.display=(expired+soon)>0?'block':'none';
+
+  // Donut
+  const circ=2*Math.PI*16;
+  const expArc=(expired/list.length||0)*circ;
+  const soonArc=(soon/list.length||0)*circ;
+  const goodArc=(good/list.length||0)*circ;
+  const offset1=0;
+  const offset2=offset1+expArc;
+  const offset3=offset2+soonArc;
+  setDonutArc('donut-good',goodArc,circ,offset3);
+  setDonutArc('donut-expired',expArc,circ,offset1);
+  setDonutArc('donut-soon',soonArc,circ,offset2);
+  document.getElementById('donut-pct-text').textContent=pct+'%';
+  document.getElementById('leg-good').textContent=good;
+  document.getElementById('leg-soon').textContent=soon;
+  document.getElementById('leg-exp').textContent=expired;
+
+  // Sparkline (mock 6-week trend)
+  const sparkData=[68,72,75,78,pct>5?pct-5:pct,pct];
+  const spark=document.getElementById('sparkline');
+  const maxS=Math.max(...sparkData,1);
+  spark.innerHTML=sparkData.map((v,i)=>{
+    const h=Math.round((v/maxS)*100);
+    const col=v>=80?'var(--green)':v>=60?'var(--yellow)':'var(--red)';
+    return `<div class="spark-bar" style="height:${h}%;background:${col}" title="Week ${i+1}: ${v}%"></div>`;
+  }).join('');
+
+  // Alert list
+  const alerts=list.map(p=>({...p,s:status(p.expiry)}))
+    .filter(p=>p.s.k!=='good').sort((a,b)=>a.s.days-b.s.days).slice(0,7);
+  const al=document.getElementById('dash-alerts');
+  al.innerHTML=alerts.length?alerts.map(p=>`
+    <div class="alert-item" onclick="nav('products')">
+      <div class="alert-left">
+        <div class="alert-icon ${p.s.k==='expired'?'ai-red':'ai-yellow'}">
+          <span class="material-symbols-outlined">${p.s.k==='expired'?'warning':'schedule'}</span>
+        </div>
+        <div>
+          <div class="alert-name">${p.name}</div>
+          <div class="alert-meta">${p.category} · SKU: ${p.sku||'N/A'} · Qty: ${p.qty}</div>
+        </div>
+      </div>
+      <div class="alert-right">
+        <span class="badge ${p.s.k==='expired'?'badge-red':'badge-yellow'}">
+          <span class="material-symbols-outlined">${p.s.k==='expired'?'error':'schedule'}</span>
+          ${p.s.k==='expired'?'Expired':p.s.label}
+        </span>
+        <div class="alert-date">${fmtDate(p.expiry)}</div>
+      </div>
+    </div>`).join('')
+  :`<div class="empty"><span class="material-symbols-outlined">check_circle</span><p>All products are in good condition.</p></div>`;
+
+  // Business advisor (3 quick tips)
+  renderSuggestions('dash-suggestions',true);
+
+  // Build notifications
+  buildNotifications(expired,soon,list);
+}
+
+function setDonutArc(id,arc,circ,offset){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const dashOffset=circ-offset;
+  el.setAttribute('stroke-dasharray',`${arc.toFixed(2)} ${(circ-arc).toFixed(2)}`);
+  el.setAttribute('stroke-dashoffset',(-offset).toFixed(2));
+}
+
+function animateNum(id,target){
+  const el=document.getElementById(id);
+  if(!el)return;
+  let current=parseInt(el.textContent)||0;
+  const step=Math.ceil(Math.abs(target-current)/15)||1;
+  const timer=setInterval(()=>{
+    if(current<target)current=Math.min(current+step,target);
+    else if(current>target)current=Math.max(current-step,target);
+    el.textContent=current;
+    if(current===target)clearInterval(timer);
+  },30);
+}
+
+/* ══════════════════════════════════════════════
+   PRODUCTS TABLE
+══════════════════════════════════════════════ */
+function renderTable(searchVal){
+  let list=products.slice();
+  // Period filter (by expiry date)
+  // Status filter
+  if(tblFilter!=='all') list=list.filter(p=>status(p.expiry).k===tblFilter);
+  // Search
+  const q=(searchVal||document.getElementById('gSearch').value||'').toLowerCase();
+  if(q) list=list.filter(p=>
+    p.name.toLowerCase().includes(q)||
+    (p.sku||'').toLowerCase().includes(q)||
+    p.category.toLowerCase().includes(q)
+  );
+  // Sort
+  list.sort((a,b)=>{
+    let va=a[tblSort.col]||'', vb=b[tblSort.col]||'';
+    if(tblSort.col==='status'){va=status(a.expiry).days; vb=status(b.expiry).days;}
+    if(typeof va==='number'||tblSort.col==='qty'||tblSort.col==='expiry'){
+      va=Number(String(va).replace(/\D/g,''));vb=Number(String(vb).replace(/\D/g,''));
+    }else{va=String(va).toLowerCase();vb=String(vb).toLowerCase();}
+    return tblSort.dir==='asc'?(va<vb?-1:va>vb?1:0):(va>vb?-1:va<vb?1:0);
+  });
+
+  document.getElementById('tbl-count').textContent=`${list.length} product${list.length!==1?'s':''}`;
+  const body=document.getElementById('tbl-body');
+  body.innerHTML=list.length?list.map(p=>{
+    const s=status(p.expiry);
+    const sClass=s.k==='expired'?'badge-red':s.k==='soon'?'badge-yellow':'badge-green';
+    const sIcon=s.k==='expired'?'error':s.k==='soon'?'schedule':'check_circle';
+    return`<tr>
+      <td><div class="prod-name">${p.name}</div>${p.notes?`<div class="prod-note">${p.notes}</div>`:''}</td>
+      <td><span class="sku-text">${p.sku||'—'}</span></td>
+      <td><span class="cat-pill">${p.category}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-weight:600">${p.qty}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px">${fmtDate(p.expiry)}</td>
+      <td><span class="badge ${sClass}"><span class="material-symbols-outlined">${sIcon}</span>${s.k==='good'?'Good':s.k==='expired'?'Expired':s.label}</span></td>
+      <td><div class="action-row">
+        <button class="tbl-btn" title="Edit" onclick="openEditModal(${p.id})"><span class="material-symbols-outlined">edit</span></button>
+        <button class="tbl-btn del" title="Delete" onclick="deleteProd(${p.id})"><span class="material-symbols-outlined">delete</span></button>
+      </div></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="7"><div class="empty"><span class="material-symbols-outlined">inventory_2</span><p>No products found for the selected filter.</p></div></td></tr>`;
+}
+
+function filterTbl(f,btn){
+  tblFilter=f;
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function sortTable(col){
+  if(tblSort.col===col) tblSort.dir=tblSort.dir==='asc'?'desc':'asc';
+  else{tblSort.col=col;tblSort.dir='asc';}
+  document.querySelectorAll('thead th').forEach(th=>{th.classList.remove('sort-asc','sort-desc')});
+  const thIdx={'name':0,'sku':1,'category':2,'qty':3,'expiry':4,'status':5};
+  const ths=document.querySelectorAll('thead th');
+  if(thIdx[col]!==undefined) ths[thIdx[col]].classList.add('sort-'+tblSort.dir);
+  renderTable();
+}
+
+function globalSearch(v){
+  if(document.getElementById('page-products').classList.contains('active')) renderTable(v.toLowerCase());
+}
+
+/* ══════════════════════════════════════════════
+   ANALYTICS
+══════════════════════════════════════════════ */
+function renderAnalytics(){
+  const list=products;
+  const expired=list.filter(p=>status(p.expiry).k==='expired').length;
+  const soon=list.filter(p=>status(p.expiry).k==='soon').length;
+  const good=list.length-expired-soon;
+  const total=list.length||1;
+
+  // Metric cards
+  const totalVal=products.reduce((a,p)=>a+(p.qty*(p.price||0)),0);
+  const expiredVal=products.filter(p=>status(p.expiry).k==='expired').reduce((a,p)=>a+(p.qty*(p.price||0)),0);
+  const avgDays=Math.round(products.reduce((a,p)=>a+Math.max(0,status(p.expiry).days),0)/total);
+  document.getElementById('metric-cards').innerHTML=`
+    <div class="metric-mini"><div class="metric-icon" style="background:var(--gray-100)"><span class="material-symbols-outlined" style="color:var(--gray-700)">inventory_2</span></div><div><div class="metric-lbl">Total Products</div><div class="metric-val">${list.length}</div></div></div>
+    <div class="metric-mini"><div class="metric-icon" style="background:var(--red-bg)"><span class="material-symbols-outlined" style="color:var(--red)">error</span></div><div><div class="metric-lbl">Expired Items</div><div class="metric-val" style="color:var(--red)">${expired}</div></div></div>
+    <div class="metric-mini"><div class="metric-icon" style="background:var(--yellow-bg)"><span class="material-symbols-outlined" style="color:var(--yellow)">schedule</span></div><div><div class="metric-lbl">Expiring Soon</div><div class="metric-val" style="color:var(--yellow)">${soon}</div></div></div>
+    <div class="metric-mini"><div class="metric-icon" style="background:var(--red-bg)"><span class="material-symbols-outlined" style="color:var(--red)">currency_rupee</span></div><div><div class="metric-lbl">Loss (Expired)</div><div class="metric-val" style="color:var(--red)">₹${expiredVal.toLocaleString('en-IN')}</div></div></div>
+  `;
+
+  // Category chart
+  const cats={};
+  list.forEach(p=>{cats[p.category]=(cats[p.category]||0)+1});
+  const catArr=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const maxC=Math.max(...catArr.map(e=>e[1]),1);
+  document.getElementById('cat-chart').innerHTML=catArr.map(([c,n])=>`
+    <div class="bar-row">
+      <span class="bar-label">${c}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxC*100)}%;background:var(--black)"></div></div>
+      <span class="bar-val">${n}</span>
+    </div>`).join('');
+
+  // Status donut (analytics page)
+  const circ=2*Math.PI*16;
+  const expA=(expired/total)*circ, soonA=(soon/total)*circ, goodA=(good/total)*circ;
+  const ap=document.getElementById('sd-good');
+  const as=document.getElementById('sd-soon');
+  const ae=document.getElementById('sd-exp');
+  ae.setAttribute('stroke-dasharray',`${expA.toFixed(2)} ${(circ-expA).toFixed(2)}`);
+  ae.setAttribute('stroke-dashoffset','0');
+  as.setAttribute('stroke-dasharray',`${soonA.toFixed(2)} ${(circ-soonA).toFixed(2)}`);
+  as.setAttribute('stroke-dashoffset',(-expA).toFixed(2));
+  ap.setAttribute('stroke-dasharray',`${goodA.toFixed(2)} ${(circ-goodA).toFixed(2)}`);
+  ap.setAttribute('stroke-dashoffset',(-(expA+soonA)).toFixed(2));
+  document.getElementById('sd-center').textContent=Math.round(good/total*100)+'%';
+  document.getElementById('status-legend').innerHTML=`
+    <div class="donut-legend">
+      <div class="legend-row"><div class="legend-dot" style="background:var(--green)"></div><span class="legend-label">Good</span><span class="legend-val">${good}</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--yellow)"></div><span class="legend-label">Soon</span><span class="legend-val">${soon}</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--red)"></div><span class="legend-label">Expired</span><span class="legend-val">${expired}</span></div>
+    </div>`;
+
+  // Line chart SVG
+  const months=['Dec','Jan','Feb','Mar','Apr','May'];
+  const trends=[62,68,71,75,80,Math.round(good/total*100)];
+  const svg=document.getElementById('linechart');
+  const W=600,H=110,pad=20;
+  const maxT=100,minT=0;
+  const pts=trends.map((v,i)=>{
+    const x=pad+(i/(trends.length-1))*(W-pad*2);
+    const y=H-pad-((v-minT)/(maxT-minT))*(H-pad*2);
+    return{x,y,v};
+  });
+  const pathD='M'+pts.map(p=>`${p.x},${p.y}`).join(' L');
+  const areaD=pathD+` L${pts[pts.length-1].x},${H-pad} L${pts[0].x},${H-pad} Z`;
+  svg.innerHTML=`
+    <defs>
+      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#16a34a" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#16a34a" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <!-- Grid lines -->
+    ${[0,25,50,75,100].map(v=>{
+      const y=H-pad-((v)/(maxT-minT))*(H-pad*2);
+      return`<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>
+             <text x="${pad-4}" y="${y+3}" font-size="8" fill="var(--gray-400)" text-anchor="end" font-family="DM Mono,monospace">${v}%</text>`;
+    }).join('')}
+    <!-- Area -->
+    <path d="${areaD}" fill="url(#areaGrad)"/>
+    <!-- Line -->
+    <path d="${pathD}" fill="none" stroke="#16a34a" stroke-width="2" stroke-linejoin="round"/>
+    <!-- Points -->
+    ${pts.map((p,i)=>`
+      <circle cx="${p.x}" cy="${p.y}" r="4" fill="${p.v>=80?'#16a34a':p.v>=60?'#b45309':'#dc2626'}" stroke="white" stroke-width="1.5"/>
+      <text x="${p.x}" y="${p.y-8}" font-size="8" fill="var(--gray-600)" text-anchor="middle" font-family="DM Mono,monospace">${p.v}%</text>
+      <text x="${p.x}" y="${H-pad+14}" font-size="8" fill="var(--gray-400)" text-anchor="middle" font-family="DM Sans,sans-serif">${months[i]}</text>
+    `).join('')}
+  `;
+  document.getElementById('lc-m1').textContent=months[0];
+  document.getElementById('lc-m6').textContent=months[months.length-1];
+
+  // Category health bars
+  const catHealth={};
+  list.forEach(p=>{
+    if(!catHealth[p.category])catHealth[p.category]={total:0,good:0};
+    catHealth[p.category].total++;
+    if(status(p.expiry).k==='good')catHealth[p.category].good++;
+  });
+  document.getElementById('cat-health-bars').innerHTML=Object.entries(catHealth).map(([c,v])=>{
+    const pct=Math.round(v.good/v.total*100);
+    const col=pct>=80?'var(--green)':pct>=50?'var(--yellow)':'var(--red)';
+    return`<div class="prog-row">
+      <div class="prog-hd"><span class="prog-name">${c}</span><span class="prog-pct" style="color:${col}">${pct}%</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Expiry timeline (next 30 days)
+  const today=new Date(); today.setHours(0,0,0,0);
+  const bands=[{label:'Today',days:0},{label:'3 Days',days:3},{label:'7 Days',days:7},{label:'14 Days',days:14},{label:'30 Days',days:30}];
+  const counts=bands.map(b=>{
+    const cutoff=new Date(today); cutoff.setDate(cutoff.getDate()+b.days+1);
+    return{...b,n:products.filter(p=>{const d=new Date(p.expiry);return d>=today&&d<cutoff;}).length};
+  });
+  const maxN=Math.max(...counts.map(c=>c.n),1);
+  document.getElementById('expiry-timeline').innerHTML=counts.map(c=>`
+    <div class="bar-row">
+      <span class="bar-label">${c.label}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c.n/maxN*100)}%;background:${c.days<=3?'var(--red)':c.days<=7?'var(--yellow)':'var(--green)'}"></div></div>
+      <span class="bar-val">${c.n}</span>
+    </div>`).join('');
+
+  renderSuggestions('full-suggestions',false);
+}
+
+/* ══════════════════════════════════════════════
+   SUGGESTIONS / BUSINESS ADVISOR
+══════════════════════════════════════════════ */
+function renderSuggestions(containerId,short){
+  const list=products;
+  const expired=list.filter(p=>status(p.expiry).k==='expired');
+  const soon=list.filter(p=>status(p.expiry).k==='soon');
+  const good=list.filter(p=>status(p.expiry).k==='good');
+  const total=list.length||1;
+  const healthPct=Math.round(good.length/total*100);
+  const expiredVal=expired.reduce((a,p)=>a+(p.qty*(p.price||0)),0);
+  const soonVal=soon.reduce((a,p)=>a+(p.qty*(p.price||0)),0);
+
+  const sugs=[];
+
+  if(expired.length>0) sugs.push({
+    icon:'warning',iconBg:'var(--red-bg)',iconColor:'var(--red)',
+    title:`Remove ${expired.length} expired product${expired.length>1?'s':''}`,
+    desc:`These items are past their expiry date and must be pulled from shelves immediately. Estimated stock loss: ₹${expiredVal.toLocaleString('en-IN')}. Document disposal for compliance records.`,
+    tags:[{t:'URGENT',bg:'var(--red-bg)',col:'var(--red)'},{t:'COMPLIANCE',bg:'var(--gray-100)',col:'var(--gray-700)'}],
+    action:'View Expired', onclick:`filterTbl('expired',document.querySelector('.ftab.red'));nav('products')`
+  });
+
+  if(soon.length>0) sugs.push({
+    icon:'local_offer',iconBg:'var(--yellow-bg)',iconColor:'var(--yellow)',
+    title:`Discount ${soon.length} soon-to-expire item${soon.length>1?'s':''}`,
+    desc:`Items worth ₹${soonVal.toLocaleString('en-IN')} are expiring within ${warnDays} days. Consider a 20–40% discount or "Buy 1 Get 1" offer to recover cost and minimise waste before expiry.`,
+    tags:[{t:'REVENUE SAVE',bg:'var(--yellow-bg)',col:'var(--yellow)'},{t:'WASTE REDUCTION',bg:'var(--gray-100)',col:'var(--gray-700)'}],
+    action:'View Items', onclick:`filterTbl('soon',document.querySelector('.ftab.yellow'));nav('products')`
+  });
+
+  const dairyCnt=list.filter(p=>p.category==='Dairy'&&status(p.expiry).k!=='expired').length;
+  if(dairyCnt>3) sugs.push({
+    icon:'thermostat',iconBg:'var(--green-bg)',iconColor:'var(--green)',
+    title:`Monitor cold chain for ${dairyCnt} dairy products`,
+    desc:`You have ${dairyCnt} active dairy products. Ensure refrigeration is maintained at ≤ 4°C. A 1°C increase in temperature can reduce dairy shelf life by up to 20%.`,
+    tags:[{t:'COLD CHAIN',bg:'var(--green-bg)',col:'var(--green)'}],
+    action:'View Dairy', onclick:`filterTbl('all',document.querySelector('.ftab'));nav('products')`
+  });
+
+  if(healthPct<80) sugs.push({
+    icon:'trending_down',iconBg:'var(--red-bg)',iconColor:'var(--red)',
+    title:`Stock health at ${healthPct}% — below optimal threshold`,
+    desc:`Your inventory health is below the recommended 80% threshold. Prioritise restocking categories with high expiry rates and implement a FIFO (First In, First Out) rotation policy.`,
+    tags:[{t:'OPERATIONS',bg:'var(--gray-100)',col:'var(--gray-700)'}],
+    action:'View Analytics', onclick:`nav('analytics')`
+  });
+
+  sugs.push({
+    icon:'event_repeat',iconBg:'var(--gray-100)',iconColor:'var(--gray-700)',
+    title:'Schedule a weekly Monday morning audit',
+    desc:'A 15-minute physical check every Monday of products expiring within 14 days can reduce waste by up to 30%. Create a checklist from the "Expiring Soon" filter and verify quantities against shelf stock.',
+    tags:[{t:'ROUTINE',bg:'var(--gray-100)',col:'var(--gray-700)'}],
+    action:'Export List', onclick:`exportCSV()`
+  });
+
+  if(!short) sugs.push({
+    icon:'bar_chart',iconBg:'var(--gray-100)',iconColor:'var(--gray-700)',
+    title:'Analyse top-loss categories and renegotiate with suppliers',
+    desc:`Your highest expiry rates are in Dairy and Snacks. Consider placing smaller, more frequent orders (weekly instead of bi-weekly) to reduce holding stock. Negotiate with suppliers for shorter lead times.`,
+    tags:[{t:'PROCUREMENT',bg:'var(--gray-100)',col:'var(--gray-700)'},{t:'COST SAVING',bg:'var(--green-bg)',col:'var(--green)'}],
+    action:'View Report', onclick:`nav('analytics')`
+  },{
+    icon:'notifications_active',iconBg:'var(--yellow-bg)',iconColor:'var(--yellow)',
+    title:'Enable 14-day expiry alerts for perishables',
+    desc:'Currently set to 7 days. Extending the warning window to 14 days for dairy and fresh items gives more time for markdowns and redistribution, improving recovery rates.',
+    tags:[{t:'SETTINGS',bg:'var(--gray-100)',col:'var(--gray-700)'}],
+    action:'Go to Settings', onclick:`nav('settings')`
+  });
+
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  const display=short?sugs.slice(0,3):sugs;
+  el.innerHTML=display.map(s=>`
+    <div class="sug-card">
+      <div class="sug-icon" style="background:${s.iconBg}"><span class="material-symbols-outlined" style="color:${s.iconColor}">${s.icon}</span></div>
+      <div class="sug-body">
+        <div class="sug-title">${s.title}</div>
+        <div class="sug-desc">${s.desc}</div>
+        <div class="sug-tags">
+          ${s.tags.map(t=>`<span class="sug-tag" style="background:${t.bg};color:${t.col}">${t.t}</span>`).join('')}
+        </div>
+      </div>
+      <button class="sug-action" onclick="${s.onclick}">${s.action}</button>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════
+   HISTORY
+══════════════════════════════════════════════ */
+function addHistory(type,msg,subMsg){
+  history.unshift({id:Date.now(),type,msg,subMsg:subMsg||'',ts:Date.now()});
+  if(history.length>100)history=history.slice(0,100);
+  persist();
+}
+function renderHistory(period){
+  period=period||'all';
+  let list=history;
+  if(period==='today'){const t=new Date();t.setHours(0,0,0,0);list=list.filter(h=>h.ts>=t.getTime());}
+  else if(period==='week'){const t=new Date();t.setDate(t.getDate()-7);list=list.filter(h=>h.ts>=t.getTime());}
+  else if(period==='month'){const t=new Date();t.setDate(t.getDate()-30);list=list.filter(h=>h.ts>=t.getTime());}
+
+  const colors={add:'var(--green)',edit:'var(--yellow)',delete:'var(--red)',system:'var(--gray-400)'};
+  const icons={add:'add_circle',edit:'edit',delete:'delete',system:'info'};
+  const el=document.getElementById('history-list');
+  el.innerHTML=list.length?list.map(h=>`
+    <div class="history-item">
+      <div class="hist-dot" style="background:${colors[h.type]||colors.system}"></div>
+      <div>
+        <div class="hist-desc">${h.msg}</div>
+        <div class="hist-sub">${h.subMsg} · ${fmtRel(h.ts)}</div>
+      </div>
+    </div>`).join('')
+  :`<div class="empty"><span class="material-symbols-outlined">history</span><p>No activity recorded${period!=='all'?' in this period':''}.</p></div>`;
+}
+function clearHistory(){
+  if(!confirm('Clear all activity history?'))return;
+  history=[];persist();renderHistory();toast('History cleared.','warn');
+}
+
+/* ══════════════════════════════════════════════
+   PRODUCT MODAL
+══════════════════════════════════════════════ */
+function openAddModal(){
+  editId=null;
+  document.getElementById('modalTitle').textContent='Add Product';
+  ['f-name','f-sku','f-notes'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('f-cat').value='';
+  document.getElementById('f-qty').value='';
+  document.getElementById('f-mfg').value='';
+  document.getElementById('f-exp').value='';
+  document.getElementById('f-price').value='';
+  document.getElementById('prodOverlay').classList.add('open');
+}
+function openEditModal(id){
+  editId=id;
+  const p=products.find(x=>x.id===id);
+  document.getElementById('modalTitle').textContent='Edit Product';
+  document.getElementById('f-name').value=p.name;
+  document.getElementById('f-sku').value=p.sku||'';
+  document.getElementById('f-cat').value=p.category;
+  document.getElementById('f-qty').value=p.qty;
+  document.getElementById('f-mfg').value=p.mfg||'';
+  document.getElementById('f-exp').value=p.expiry;
+  document.getElementById('f-price').value=p.price||'';
+  document.getElementById('f-notes').value=p.notes||'';
+  document.getElementById('prodOverlay').classList.add('open');
+}
+function closeProdModal(){document.getElementById('prodOverlay').classList.remove('open')}
+
+function saveProd(){
+  const name=document.getElementById('f-name').value.trim();
+  const expiry=document.getElementById('f-exp').value;
+  const cat=document.getElementById('f-cat').value;
+  if(!name||!expiry||!cat){toast('Please fill all required fields (Name, Category, Expiry Date).','error');return;}
+  const data={
+    name, sku:document.getElementById('f-sku').value.trim()||`SKU-${Date.now().toString(36).toUpperCase().slice(-6)}`,
+    category:cat, qty:parseInt(document.getElementById('f-qty').value)||1,
+    mfg:document.getElementById('f-mfg').value,
+    expiry, price:parseFloat(document.getElementById('f-price').value)||0,
+    notes:document.getElementById('f-notes').value.trim()
+  };
+  if(editId){
+    const idx=products.findIndex(p=>p.id===editId);
+    products[idx]={...products[idx],...data};
+    addHistory('edit',`Edited: ${name}`,`Category: ${cat} · Expiry: ${fmtDate(expiry)}`);
+    toast('Product updated successfully.','success');
+  }else{
+    products.push({id:Date.now(),...data});
+    addHistory('add',`Added: ${name}`,`Category: ${cat} · Expiry: ${fmtDate(expiry)} · Qty: ${data.qty}`);
+    toast('Product added to inventory.','success');
+  }
+  persist();closeProdModal();
+  renderTable();renderDash();
+  document.getElementById('nb-dashboard').textContent=products.filter(p=>status(p.expiry).k!=='good').length;
+}
+
+function deleteProd(id){
+  const p=products.find(x=>x.id===id);
+  if(!p)return;
+  if(!confirm(`Delete "${p.name}" from inventory?`))return;
+  products=products.filter(x=>x.id!==id);
+  addHistory('delete',`Deleted: ${p.name}`,`Category: ${p.category} · Was expiring: ${fmtDate(p.expiry)}`);
+  persist();renderTable();renderDash();toast('Product removed.','warn');
+}
+
+/* ══════════════════════════════════════════════
+   PROFILE
+══════════════════════════════════════════════ */
+function renderProfile(){
+  document.getElementById('dispName').textContent=profile.fname+' '+profile.lname;
+  document.getElementById('dispRole').textContent=profile.role;
+  document.getElementById('dispStore').textContent=profile.store;
+  const av=document.getElementById('avatarDisp');
+  if(profile.avatar){
+    av.innerHTML=`<img src="${profile.avatar}" class="avatar-img"/>`;
+  }else{
+    const initials=(profile.fname[0]||'R')+(profile.lname[0]||'S');
+    av.innerHTML=`<div class="avatar-initials">${initials.toUpperCase()}</div>`;
+  }
+}
+function openProfileModal(){
+  document.getElementById('pf-fname').value=profile.fname;
+  document.getElementById('pf-lname').value=profile.lname;
+  document.getElementById('pf-role').value=profile.role;
+  document.getElementById('pf-store').value=profile.store;
+  document.getElementById('pf-email').value=profile.email;
+  document.getElementById('pf-phone').value=profile.phone||'';
+  const img=document.getElementById('avatarUploadImg');
+  const icon=document.getElementById('avatarUploadIcon');
+  if(profile.avatar){img.src=profile.avatar;img.style.display='block';icon.style.display='none';}
+  else{img.style.display='none';icon.style.display='';}
+  document.getElementById('profileOverlay').classList.add('open');
+}
+function closeProfileModal(){document.getElementById('profileOverlay').classList.remove('open')}
+function saveProfile(){
+  profile.fname=document.getElementById('pf-fname').value.trim()||profile.fname;
+  profile.lname=document.getElementById('pf-lname').value.trim()||profile.lname;
+  profile.role=document.getElementById('pf-role').value.trim()||profile.role;
+  profile.store=document.getElementById('pf-store').value.trim()||profile.store;
+  profile.email=document.getElementById('pf-email').value.trim()||profile.email;
+  profile.phone=document.getElementById('pf-phone').value.trim();
+  const img=document.getElementById('avatarUploadImg');
+  if(img.style.display!=='none'&&img.src)profile.avatar=img.src;
+  persist();renderProfile();closeProfileModal();
+  addHistory('edit','Profile updated',`Name: ${profile.fname} ${profile.lname}`);
+  toast('Profile saved successfully.','success');
+}
+function handleAvatar(input){
+  const file=input.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=document.getElementById('avatarUploadImg');
+    const icon=document.getElementById('avatarUploadIcon');
+    img.src=e.target.result; img.style.display='block'; icon.style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ══════════════════════════════════════════════
+   NOTIFICATIONS
+══════════════════════════════════════════════ */
+function buildNotifications(expired,soon,list){
+  const notifs=[];
+  if(expired>0) notifs.push({icon:'error',bg:'var(--red-bg)',col:'var(--red)',msg:`${expired} product${expired>1?'s':''} have expired and need removal.`,ts:Date.now()-300000});
+  if(soon>0) notifs.push({icon:'schedule',bg:'var(--yellow-bg)',col:'var(--yellow)',msg:`${soon} product${soon>1?'s':''} expiring within ${warnDays} days.`,ts:Date.now()-1800000});
+  notifs.push({icon:'check_circle',bg:'var(--green-bg)',col:'var(--green)',msg:`${list.filter(p=>status(p.expiry).k==='good').length} products in good condition.`,ts:Date.now()-3600000});
+
+  document.getElementById('notifList').innerHTML=notifs.map(n=>`
+    <div class="notif-item">
+      <div class="notif-icon" style="background:${n.bg}"><span class="material-symbols-outlined" style="color:${n.col};font-size:16px">${n.icon}</span></div>
+      <div class="notif-content">
+        <div class="notif-msg">${n.msg}</div>
+        <div class="notif-time">${fmtRel(n.ts)}</div>
+      </div>
+    </div>`).join('');
+}
+function toggleNotif(){
+  const panel=document.getElementById('notifPanel');
+  panel.classList.toggle('open');
+  if(panel.classList.contains('open')) document.getElementById('notifDot').style.display='none';
+}
+function closeNotif(){document.getElementById('notifPanel').classList.remove('open')}
+function clearNotifs(){document.getElementById('notifList').innerHTML='<div class="empty"><span class="material-symbols-outlined">notifications_off</span><p>No notifications.</p></div>';closeNotif();}
+
+/* ══════════════════════════════════════════════
+   DATA ACTIONS
+══════════════════════════════════════════════ */
+function exportCSV(){
+  const hd='Name,SKU,Category,Qty,Manufacture Date,Expiry Date,Price,Status,Notes\n';
+  const rows=products.map(p=>`"${p.name}","${p.sku||''}","${p.category}",${p.qty},"${p.mfg||''}","${p.expiry}",${p.price||0},"${status(p.expiry).k}","${p.notes||''}"`).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([hd+rows],{type:'text/csv'}));
+  a.download=`kirana_inventory_${new Date().toISOString().split('T')[0]}.csv`;a.click();
+  addHistory('system','Exported inventory CSV',`${products.length} records`);
+  toast('Inventory exported as CSV.','success');
+}
+function exportAnalytics(){
+  const expired=products.filter(p=>status(p.expiry).k==='expired');
+  const soon=products.filter(p=>status(p.expiry).k==='soon');
+  const good=products.filter(p=>status(p.expiry).k==='good');
+  const hd='Metric,Value\n';
+  const rows=[
+    `Total Products,${products.length}`,
+    `Expired,${expired.length}`,
+    `Expiring Soon,${soon.length}`,
+    `Good Condition,${good.length}`,
+    `Health %,${Math.round(good.length/products.length*100)}%`,
+    `Expired Stock Value,₹${expired.reduce((a,p)=>a+(p.qty*(p.price||0)),0)}`,
+  ].join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([hd+rows],{type:'text/csv'}));
+  a.download=`kirana_analytics_${new Date().toISOString().split('T')[0]}.csv`;a.click();
+  toast('Analytics report exported.','success');
+}
+function clearExpired(){
+  const cnt=products.filter(p=>status(p.expiry).k==='expired').length;
+  if(!cnt){toast('No expired products to remove.','warn');return;}
+  if(!confirm(`Remove ${cnt} expired product(s) from inventory?`))return;
+  products=products.filter(p=>status(p.expiry).k!=='expired');
+  addHistory('delete',`Cleared ${cnt} expired product${cnt>1?'s':''}`,`Stock cleanup performed`);
+  persist();renderDash();renderTable();toast(`${cnt} expired product(s) removed.`,'success');
+}
+function resetData(){
+  if(!confirm('Reset to original sample data? This cannot be undone.'))return;
+  products=SEED.map(p=>({...p}));persist();
+  addHistory('system','Data reset to sample inventory','All custom products removed');
+  renderDash();renderTable();toast('Inventory reset to sample data.','warn');
+}
+function updateThreshold(v){
+  warnDays=parseInt(v);
+  toast(`Expiry warning set to ${v} days.`,'success');
+  renderDash();renderTable();
+}
+function confirmSignOut(){if(confirm('Sign out of KiranaTrack?'))toast('Sign out would occur in production.','warn')}
+
+/* ══════════════════════════════════════════════
+   DARK MODE
+══════════════════════════════════════════════ */
+function toggleDark(el){
+  document.documentElement.classList.toggle('dark',el.checked);
+  localStorage.setItem('kt2_dark',el.checked?'1':'');
+}
+
+/* ══════════════════════════════════════════════
+   DEVICE PREVIEW
+══════════════════════════════════════════════ */
+let previewOpen=false;
+function openPreview(){
+  previewOpen=true;
+  document.getElementById('deviceToolbar').classList.add('show');
+  document.body.style.background='#111';
+  document.body.style.padding='44px 32px 32px';
+  document.getElementById('previewToggle').style.display='none';
+  setDevice('desktop');
+}
+function exitPreview(){
+  previewOpen=false;
+  document.getElementById('deviceToolbar').classList.remove('show');
+  document.body.style.background='';
+  document.body.style.padding='';
+  document.getElementById('deviceFrame').className='';
+  document.getElementById('previewToggle').style.display='';
+  document.getElementById('mobBar').style.display='';
+}
+function setDevice(d){
+  const frame=document.getElementById('deviceFrame');
+  frame.className=d==='desktop'?'':d;
+  document.querySelectorAll('.dev-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+d)?.classList.add('active');
+  const mob=document.getElementById('mobBar');
+  mob.style.display=d==='mobile'?'flex':'';
+}
+
+/* ══════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════ */
+function closeOnBg(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('open')}
+
+function toast(msg,type='info'){
+  const stack=document.getElementById('toastStack');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  const icons={info:'info',success:'check_circle',error:'error',warn:'warning'};
+  t.innerHTML=`<span class="material-symbols-outlined">${icons[type]||'info'}</span>${msg}`;
+  stack.appendChild(t);
+  setTimeout(()=>{t.style.animation='toastOut .3s ease forwards';setTimeout(()=>t.remove(),300)},3500);
+}
+
+/* Close notif panel on outside click */
+document.addEventListener('click',e=>{
+  const panel=document.getElementById('notifPanel');
+  const btn=document.getElementById('notifBtn');
+  if(panel.classList.contains('open')&&!panel.contains(e.target)&&!btn.contains(e.target)) closeNotif();
+});
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+// Restore dark mode
+if(localStorage.getItem('kt2_dark')){
+  document.documentElement.classList.add('dark');
+  document.getElementById('tog-dark').checked=true;
+}
+// Set min date for expiry inputs to today
+const todayISO=new Date().toISOString().split('T')[0];
+document.getElementById('f-exp').min=todayISO;
+document.getElementById('dateFrom').value='';
+document.getElementById('dateTo').value='';
+
+// Seed history if empty
+if(!history.length){
+  addHistory('system','KiranaTrack started','Inventory loaded with sample data');
+  addHistory('add','Initial inventory loaded',`${SEED.length} products added`);
+}
+
+renderDash();
+renderTable();
+renderProfile();
+</script>
+</body>
+</html>
