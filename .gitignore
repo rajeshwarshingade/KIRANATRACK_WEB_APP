@@ -27,6 +27,9 @@ next-env.d.ts
 /android/capacitor-cordova-android-plugins
 /android-keystore/*.jks
 /android-keystore/*.keystore
+# Release signing credentials. build.gradle falls back to an unsigned release
+# when this is absent, so a fresh clone still builds.
+/android/keystore.properties
 
 # misc
 .DS_Store

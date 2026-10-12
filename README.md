@@ -11,18 +11,6 @@ all rights and ownership go to Rajeshwar Shingade.**
 
 ---
 
-## Why this exists
-
-India's 12M+ kirana stores lose ₹30,000–₹80,000 a year to expired and untracked
-stock, and most still run on paper. The problem was never a lack of data — it is
-that the data lives in someone's head at the counter, and nothing ever looks at
-it.
-
-KiranaTrack puts that data somewhere it can be *read*, and then says something
-useful about it.
-
----
-
 ## What it does
 
 | Screen | What it is for |
@@ -91,15 +79,37 @@ Settings.
 
 ### Android APK
 
+The signed release build is committed to the studio repo at
+`public/apps/KiranaTrack.apk`, served from
+`small-town-studio.vercel.app/apps/KiranaTrack.apk`. It is requested through a
+short form rather than linked directly, so it can be handed over with a reply.
+
+To rebuild it:
+
 ```bash
 CAPACITOR_BUILD=1 npm run build   # static export to out/
-npx cap add android                # first time only
 npx cap sync android
-npx cap open android               # then Build > Generate Signed APK
+cd android && gradlew.bat assembleRelease
+# -> android/app/build/outputs/apk/release/app-release.apk
 ```
 
 `CAPACITOR_BUILD=1` switches `next.config.ts` to `output: "export"` with
-directory-style URLs. Without it the web build is untouched.
+directory-style URLs. Without it the web build is untouched — the web deployment
+is a normal server build and must not inherit the WebView's constraints.
+
+**Signing.** Release signing reads from `android/keystore.properties`, which is
+git-ignored along with the `.jks`. `build.gradle` falls back to an unsigned
+release when that file is absent, so a fresh clone still builds.
+
+```bash
+keytool -genkeypair -v -keystore android-keystore/kiranatrack-release.jks \
+  -alias kiranatrack -keyalg RSA -keysize 2048 -validity 10950
+```
+
+That keystore is what lets you ship an update to an installed app — Android
+refuses an update signed by a different key — so back it up alongside the shop's
+own data backups. Losing it means the next build has to ship under a new
+package identity.
 
 ---
 
@@ -192,33 +202,16 @@ CSVs are exports, not backups — for Excel, Tally and GST reconciliation.
 
 ---
 
-## The original prototype
-
-`legacy/` holds the first version of this idea — a single self-contained HTML file
-with no backend, which opened instantly on any device. It is superseded, but kept
-because it is the clearest statement of the original problem, and because the
-pitch deck and UI archive sit alongside it.
-
-| File | What it is |
-| --- | --- |
-| `legacy/kirana_tracker_v2.html` | The single-file prototype. Open it directly in a browser. |
-| `legacy/KiranaTrack_Pitch_Deck.pptx` | Pitch deck. |
-| `legacy/UI_Design.zip` | UI design archive. |
-
-What the rebuild changed: expiry stopped being the only feature (there is now
-billing, purchasing and an audit trail), the suggestions became computed from
-real sales rather than templates, and the data model became something a shop can
-actually keep for years.
-
----
-
 ## Links
 
+- **Live web app** — <https://kiranatrack-web-app.vercel.app>
 - Studio — <https://small-town-studio.vercel.app>
 - App page — <https://small-town-studio.vercel.app/apps/kiranatrack>
 - Rajeshwar Shingade — <https://rajeshwarshingade.me>
+- Source — <https://github.com/rajeshwarshingade/KIRANATRACK_WEB_APP>
 - GitHub — <https://github.com/rajeshwarshingade>
 - LinkedIn — <https://www.linkedin.com/in/rajeshwarshingade>
+- WhatsApp — <https://wa.me/917387296585> (+91 73872 96585)
 - Email — <shingade27r@gmail.com>
 
 © SmallTown Studio — all rights and ownership go to Rajeshwar Shingade.
