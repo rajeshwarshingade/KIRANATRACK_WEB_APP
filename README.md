@@ -79,10 +79,10 @@ Settings.
 
 ### Android APK
 
-The signed release build is committed to the studio repo at
-`public/apps/KiranaTrack.apk`, served from
-`small-town-studio.vercel.app/apps/KiranaTrack.apk`. It is requested through a
-short form rather than linked directly, so it can be handed over with a reply.
+**Free.** A signed release build is committed to the studio repo at
+`public/apps/KiranaTrack.apk` and served straight from
+`small-town-studio.vercel.app/apps/KiranaTrack.apk` — no form, no account, no
+subscription.
 
 To rebuild it:
 
@@ -204,14 +204,13 @@ CSVs are exports, not backups — for Excel, Tally and GST reconciliation.
 
 ## Links
 
-- **Live web app** — <https://kiranatrack-web-app.vercel.app>
+- **Live web app** — <https://kiranatrack-web-app.vercel.app> (free, no account)
 - Studio — <https://small-town-studio.vercel.app>
-- App page — <https://small-town-studio.vercel.app/apps/kiranatrack>
+- App page & APK — <https://small-town-studio.vercel.app/apps/kiranatrack>
 - Rajeshwar Shingade — <https://rajeshwarshingade.me>
 - Source — <https://github.com/rajeshwarshingade/KIRANATRACK_WEB_APP>
 - GitHub — <https://github.com/rajeshwarshingade>
 - LinkedIn — <https://www.linkedin.com/in/rajeshwarshingade>
-- WhatsApp — <https://wa.me/917387296585> (+91 73872 96585)
 - Email — <shingade27r@gmail.com>
 
 © SmallTown Studio — all rights and ownership go to Rajeshwar Shingade.
