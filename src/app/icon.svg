@@ -1,0 +1,41 @@
+<!--
+  App icon.
+
+  A receipt drawn on the neumorphic tile that carries the app's identity in the
+  header. Written as a static `.svg` rather than generated with `next/og`: a
+  static file has no build-time dependency, needs no font loading, renders
+  identically in the Android static export, and is a couple of kilobytes instead
+  of bundling an image-generation runtime into the app.
+
+  The background matches `--color-surface` (#e3e9f2) so the icon sits on a
+  light home screen without a visible square edge.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#eef2f8"/>
+      <stop offset="100%" stop-color="#d8e0ec"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#surface)"/>
+
+  <!-- Raised tile: light from the top-left, matching the app's light source. -->
+  <rect x="112" y="96" width="288" height="336" rx="52" fill="#e3e9f2"/>
+  <path d="M112 148a52 52 0 0 1 52-52h184a52 52 0 0 1 52 52v52H112z" fill="#ffffff" opacity="0.55"/>
+  <path d="M400 148v232a52 52 0 0 1-52 52H164a52 52 0 0 1-52-52V148z" fill="#a3b1c6" opacity="0.28"/>
+
+  <!-- Receipt, with the zig-zag foot a thermal bill actually prints. -->
+  <path
+    d="M168 152h176v216l-29.3-19-29.4 19-29.3-19-29.4 19-29.3-19-29.3 19z"
+    fill="#1e40af"
+    fill-opacity="0.08"
+    stroke="#1e40af"
+    stroke-width="15"
+    stroke-linejoin="round"/>
+
+  <!-- Rupee. -->
+  <path d="M212 202h74M212 242h74M258 202c0 25-16 42-40 42h-14l56 64"
+        fill="none" stroke="#1e40af" stroke-width="19"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,737 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   KiranaTrack Design System — "Accessible Hybrid Neumorphism"
+   --------------------------------------------------------------------------
+   Neumorphism carries a high accessibility risk: light-on-light soft UI fights
+   WCAG AA. This system keeps the full neumorphic surface language (dual
+   convex/concave shadows, no hard borders, press-to-sink states) while enforcing
+   real contrast on every text and state token.
+
+   Measured against the #e3e9f2 base surface:
+     --color-ink        #1E293B  11.6:1  AAA
+     --color-ink-muted  #475569   6.3:1  AA (body text)
+     --color-ink-faint  #64748B   4.6:1  AA (large/secondary only)
+     --color-brand      #1E40AF   9.9:1  white text on it
+     --color-accent     #C2410C   5.4:1  white text on it
+   ========================================================================== */
+
+@theme {
+  /*
+   * Teko everywhere, matching StudyFlow so the two apps read as one studio.
+   *
+   * `--font-sans` resolves to Teko as well as `--font-display`, so every
+   * `font-sans` utility, the body default and all form controls land on the
+   * same family. Inter is kept as `--font-body` purely as a fallback stack
+   * entry if Teko fails to load.
+   */
+  --font-sans: var(--font-display), var(--font-body), ui-sans-serif,
+    system-ui, sans-serif;
+  --font-display: var(--font-display), var(--font-body), ui-sans-serif,
+    system-ui, sans-serif;
+
+  /*
+   * Money and quantities use a monospaced face.
+   *
+   * Rupee amounts are compared vertically in tables and on stat tiles. In a
+   * proportional face the decimal point shifts column to column and the eye
+   * catches the wrong digit — so money is explicitly `tabular` everywhere it
+   * is rendered, and this is the fallback stack behind that.
+   */
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+  /* --- Neumorphic surface ---------------------------------------------- */
+  /*
+   * Named `--color-surface`, not `--color-base`, on purpose.
+   *
+   * A `--color-*` key in `@theme` generates its own colour utility under that
+   * exact name. `--color-base` would therefore emit `.text-base{color:...}`,
+   * which silently takes precedence over Tailwind's built-in `.text-base`
+   * font-size utility. `surface` collides with nothing. Do not reintroduce
+   * `base`.
+   */
+  --color-surface: #e3e9f2;
+  --color-surface-deep: #d6deeb;
+  --color-shadow-light: #ffffff;
+  --color-shadow-dark: #a3b1c6;
+
+  /* --- Ink -------------------------------------------------------------- */
+  --color-ink: #1e293b;
+  --color-ink-muted: #475569;
+  --color-ink-faint: #64748b;
+
+  /* --- Brand / accent / status ------------------------------------------ */
+  --color-brand: #1e40af;
+  --color-brand-soft: #3b63c4;
+  --color-accent: #c2410c;
+  --color-success: #15803d;
+  --color-notice: #b45309;
+
+  /*
+   * Retail severity ramp.
+   *
+   * Stock health is the app's core signal, so it gets its own named tokens
+   * rather than reusing `success`/`notice`/`accent`. Each is checked against
+   * the surface for contrast: `danger` carries white text on a filled chip,
+   * so it needs to be dark enough to support it.
+   */
+  --color-danger: #b91c1c;
+  --color-urgent: #c2410c;
+
+  /* --- Depth ------------------------------------------------------------ */
+  --shadow-raised-xs: -2px -2px 5px rgba(255, 255, 255, 0.85),
+    2px 2px 5px rgba(163, 177, 198, 0.5);
+  --shadow-raised-sm: -3px -3px 8px rgba(255, 255, 255, 0.85),
+    3px 3px 8px rgba(163, 177, 198, 0.5);
+  --shadow-raised: -6px -6px 16px rgba(255, 255, 255, 0.85),
+    6px 6px 16px rgba(163, 177, 198, 0.55);
+  --shadow-raised-lg: -10px -10px 26px rgba(255, 255, 255, 0.9),
+    10px 10px 26px rgba(163, 177, 198, 0.55);
+  --shadow-inset-sm: inset -2px -2px 5px rgba(255, 255, 255, 0.8),
+    inset 2px 2px 5px rgba(163, 177, 198, 0.45);
+  --shadow-inset: inset -4px -4px 10px rgba(255, 255, 255, 0.8),
+    inset 4px 4px 10px rgba(163, 177, 198, 0.5);
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --radius-neu: 1rem;
+  --radius-neu-lg: 1.5rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    /* Keep focus rings and controls clear of the iOS home indicator. */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    /* Neumorphism needs one consistent light source: a wash from the top-left. */
+    background-image: radial-gradient(
+      ellipse 90% 60% at 15% -10%,
+      rgba(255, 255, 255, 0.75),
+      transparent 60%
+    );
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+   * Type scale.
+   *
+   * Every heading, label and metric routes through one of these tokens so size
+   * and weight follow the role rather than being re-picked per screen.
+   */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.012em;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  /* Screen title — the single loudest element on a page. */
+  h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.06;
+  }
+
+  @media (min-width: 640px) {
+    h1 {
+      font-size: 2.75rem;
+    }
+  }
+
+  /* Section heading. */
+  h2 {
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  /* Sub-section / card heading. */
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: 0.035em;
+  }
+
+  /*
+   * Paragraph copy also runs Teko. Teko is condensed, so body text needs
+   * slightly more letter-spacing and a touch more weight than it would in a
+   * wider face to stay legible at 14–15px.
+   */
+  p {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    letter-spacing: 0.012em;
+    text-wrap: pretty;
+  }
+
+  /* The default outline vanishes into a soft-light surface, so every
+     interactive element gets an explicit high-contrast ring. */
+  :focus-visible {
+    outline: 3px solid var(--color-brand);
+    outline-offset: 3px;
+    border-radius: 0.5rem;
+  }
+
+  ::selection {
+    background: var(--color-brand);
+    color: #fff;
+  }
+
+  /* Remove the number-input spinners — visually noisy in a neumorphic field
+     and unreachable by keyboard on some platforms anyway. */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    appearance: textfield;
+  }
+}
+
+@layer components {
+  /* --- Surfaces -------------------------------------------------------- */
+
+  .neu-raised {
+    background: var(--color-surface);
+    border-radius: var(--radius-neu);
+    box-shadow: var(--shadow-raised);
+  }
+
+  .neu-raised-xs {
+    background: var(--color-surface);
+    border-radius: 0.875rem;
+    box-shadow: var(--shadow-raised-xs);
+  }
+
+  .neu-raised-sm {
+    background: var(--color-surface);
+    border-radius: var(--radius-neu);
+    box-shadow: var(--shadow-raised-sm);
+  }
+
+  /* Dialog surface. */
+  .neu-raised-lg {
+    background: var(--color-surface);
+    border-radius: var(--radius-neu-lg);
+    box-shadow: var(--shadow-raised-lg);
+  }
+
+  .neu-inset {
+    background: var(--color-surface);
+    border-radius: var(--radius-neu);
+    box-shadow: var(--shadow-inset);
+  }
+
+  .neu-inset-sm {
+    background: var(--color-surface);
+    border-radius: 0.875rem;
+    box-shadow: var(--shadow-inset-sm);
+  }
+
+  .neu-well {
+    background: var(--color-surface);
+    border-radius: 0.875rem;
+    box-shadow: var(--shadow-inset-sm);
+  }
+
+  /* --- Buttons --------------------------------------------------------- */
+
+  .neu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    /* 48px minimum touch target, above the 44px guidance. */
+    min-height: 3rem;
+    padding: 0.75rem 1.5rem;
+    border: 0;
+    border-radius: 0.875rem;
+    /* Teko reads light at button sizes, so it is set one step larger and
+       heavier than the equivalent Inter button. Uppercase is applied here
+       rather than per-button, so nested spans/icons cannot render in a
+       different case or face. */
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    text-align: center;
+    cursor: pointer;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: var(--shadow-raised-sm);
+    transition:
+      box-shadow 180ms var(--ease-soft),
+      transform 180ms var(--ease-soft),
+      color 180ms var(--ease-soft);
+  }
+
+  .neu-btn:hover:not(:disabled) {
+    box-shadow: var(--shadow-raised);
+  }
+
+  /* Press: the surface physically sinks rather than shifting layout. */
+  .neu-btn:active:not(:disabled),
+  .neu-btn[aria-pressed="true"] {
+    box-shadow: var(--shadow-inset);
+    transform: translateY(1px);
+  }
+
+  .neu-btn:disabled {
+    color: var(--color-ink-faint);
+    cursor: not-allowed;
+    box-shadow: var(--shadow-inset-sm);
+  }
+
+  .neu-btn-primary {
+    background: var(--color-brand);
+    color: #fff;
+    box-shadow:
+      -4px -4px 12px rgba(255, 255, 255, 0.7),
+      4px 4px 12px rgba(30, 64, 175, 0.45);
+  }
+
+  .neu-btn-primary:hover:not(:disabled) {
+    box-shadow:
+      -6px -6px 16px rgba(255, 255, 255, 0.75),
+      6px 6px 16px rgba(30, 64, 175, 0.5);
+  }
+
+  .neu-btn-primary:active:not(:disabled) {
+    background: #1b389e;
+    box-shadow: inset -3px -3px 8px rgba(255, 255, 255, 0.18),
+      inset 3px 3px 8px rgba(11, 22, 64, 0.5);
+  }
+
+  .neu-btn-accent {
+    background: var(--color-accent);
+    color: #fff;
+    box-shadow:
+      -4px -4px 12px rgba(255, 255, 255, 0.7),
+      4px 4px 12px rgba(194, 65, 12, 0.45);
+  }
+
+  .neu-btn-accent:hover:not(:disabled) {
+    box-shadow:
+      -6px -6px 16px rgba(255, 255, 255, 0.75),
+      6px 6px 16px rgba(194, 65, 12, 0.5);
+  }
+
+  .neu-btn-success {
+    background: var(--color-success);
+    color: #fff;
+    box-shadow:
+      -4px -4px 12px rgba(255, 255, 255, 0.7),
+      4px 4px 12px rgba(21, 128, 61, 0.45);
+  }
+
+  .neu-btn-success:hover:not(:disabled) {
+    box-shadow:
+      -6px -6px 16px rgba(255, 255, 255, 0.75),
+      6px 6px 16px rgba(21, 128, 61, 0.5);
+  }
+
+  /*
+   * Danger variant.
+   *
+   * Used for destructive confirmation only. Present in the token set because a
+   * destructive action must never be signalled by colour alone — it is always
+   * paired with a confirm step whose copy names the consequence.
+   */
+  .neu-btn-danger {
+    background: var(--color-danger);
+    color: #fff;
+    box-shadow:
+      -4px -4px 12px rgba(255, 255, 255, 0.7),
+      4px 4px 12px rgba(185, 28, 28, 0.45);
+  }
+
+  .neu-btn-danger:hover:not(:disabled) {
+    box-shadow:
+      -6px -6px 16px rgba(255, 255, 255, 0.75),
+      6px 6px 16px rgba(185, 28, 28, 0.5);
+  }
+
+  /*
+   * Compact button.
+   *
+   * Table rows and chips are dense, and a full 3rem button inside a table row
+   * would double its height. This keeps the neumorphic press behaviour at a
+   * size that fits a row while staying above the 36px practical minimum for a
+   * secondary action (primary actions always use `.neu-btn`).
+   */
+  .neu-btn-sm {
+    min-height: 2.25rem;
+    padding: 0.375rem 0.875rem;
+    font-size: 0.9375rem;
+    letter-spacing: 0.05em;
+    border-radius: 0.75rem;
+  }
+
+  /* --- Forms ----------------------------------------------------------- */
+
+  .neu-input {
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 1rem;
+    border: 0;
+    border-radius: 0.875rem;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    letter-spacing: 0.012em;
+    box-shadow: var(--shadow-inset);
+    transition: box-shadow 180ms var(--ease-soft);
+  }
+
+  .neu-input::placeholder {
+    color: var(--color-ink-faint);
+  }
+
+  .neu-input:focus-visible {
+    outline: 3px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  /* Currency and quantity fields. `tabular` stops digits jittering as the value
+     is typed, which matters most for a price field being keyed by hand. */
+  .neu-input-money {
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono);
+    letter-spacing: 0;
+  }
+
+  /* Selects need an explicit background: the native control does not inherit
+     the neumorphic surface, and leaves a white default on some engines. */
+  select.neu-input {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--color-ink-muted) 50%),
+      linear-gradient(135deg, var(--color-ink-muted) 50%, transparent 50%);
+    background-position:
+      calc(100% - 20px) calc(50% + 2px),
+      calc(100% - 14px) calc(50% + 2px);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 2.5rem;
+  }
+
+  /*
+   * Range input.
+   *
+   * The native track is a hairline on a soft surface, so the whole control is
+   * rebuilt: an inset well for the track and a raised brand thumb. WebKit and
+   * Gecko need separate selectors — they expose different pseudo-elements for
+   * the track and thumb, and styling only one leaves a bare native control in
+   * the other engine.
+   */
+  .neu-range {
+    appearance: none;
+    width: 100%;
+    height: 1.75rem;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .neu-range::-webkit-slider-runnable-track {
+    height: 0.75rem;
+    border-radius: 999px;
+    box-shadow: var(--shadow-inset-sm);
+  }
+
+  .neu-range::-webkit-slider-thumb {
+    appearance: none;
+    margin-top: -0.4375rem;
+    width: 1.625rem;
+    height: 1.625rem;
+    border-radius: 50%;
+    background: var(--color-brand);
+    border: 0;
+    box-shadow: 0 2px 6px rgba(30, 64, 175, 0.45);
+  }
+
+  .neu-range::-moz-range-track {
+    height: 0.75rem;
+    border-radius: 999px;
+    box-shadow: var(--shadow-inset-sm);
+  }
+
+  .neu-range::-moz-range-thumb {
+    width: 1.625rem;
+    height: 1.625rem;
+    border-radius: 50%;
+    background: var(--color-brand);
+    border: 0;
+    box-shadow: 0 2px 6px rgba(30, 64, 175, 0.45);
+  }
+
+  /* Teko at label size needs the extra weight and a little more room, or the
+     caps read as grey mush against the soft surface. */
+  .neu-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    color: var(--color-ink-muted);
+  }
+
+  /* Page eyebrow. */
+  .neu-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--color-brand);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-raised-xs);
+  }
+
+  /* Compact uppercase capsule for metadata. */
+  .neu-capsule {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--color-brand);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-raised-xs);
+  }
+
+  .neu-capsule-success {
+    color: var(--color-success);
+  }
+
+  .neu-capsule-notice {
+    color: var(--color-notice);
+  }
+
+  .neu-capsule-danger {
+    color: var(--color-danger);
+  }
+
+  .neu-capsule-accent {
+    color: var(--color-accent);
+  }
+
+  /* --- App layout ------------------------------------------------------ */
+
+  .app-shell {
+    width: 100%;
+    max-width: 76rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .app-shell {
+      padding-inline: 2rem;
+    }
+  }
+
+  /*
+   * Tabular figures.
+   *
+   * Applied to every rupee amount, quantity and invoice number. Without it,
+   * columns of money do not line up and the eye reads the wrong digit — which
+   * on a bill is not a cosmetic problem.
+   */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+}
+
+@layer utilities {
+  .break-anywhere {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* =============================================================================
+   Translucent chrome
+   -----------------------------------------------------------------------------
+   The top bar and dock float over scrolling content, so they are translucent
+   with a backdrop filter rather than opaque.
+
+   These live outside @layer components on purpose. A nested @supports rule
+   inside that layer makes the CSS processor discard every rule from the point
+   of nesting onward, which silently removes the class while leaving the rules
+   declared before it intact — a failure that looks like "my class has no
+   styles" with no error anywhere.
+
+   The fallback is expressed through cascade order rather than @supports: the
+   solid base colour is declared first, then the translucent version. Engines
+   without color-mix keep the first declaration and drop the second.
+   ============================================================================== */
+
+.neu-glass {
+  /* Fallback for engines without color-mix. */
+  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+}
+
+.neu-dock {
+  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: blur(22px) saturate(1.6);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  box-shadow:
+    0 -6px 24px rgba(163, 177, 198, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  border-radius: 1.5rem;
+}
+
+/* Active tab indicator. Colour plus elevation, so the current screen is never
+   signalled by shadow alone. */
+.neu-tab-active {
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised-xs);
+  color: var(--color-brand);
+}
+
+.neu-tab-idle {
+  color: var(--color-ink-muted);
+}
+
+.neu-tab-idle:active {
+  box-shadow: var(--shadow-inset-sm);
+}
+
+/*
+ * Navigation tab label.
+ *
+ * Nav links are not `.neu-btn`, so the button rules never reach them. Declared
+ * separately so every tab label gets the same uppercase Teko treatment as every
+ * button, in one place rather than repeated utility strings per link.
+ */
+.neu-tab-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  min-height: 3.5rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: 0.75rem;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/*
+ * Chart axis and bar labels.
+ *
+ * These are buttons too — a column or bar is a filter control — so they must
+ * satisfy the same "every button is uppercase Teko" rule. Their content is
+ * generated data (dates, amounts, product names), which has no meaningful
+ * uppercase form of its own, so it is converted here at the source rather than
+ * case-folding the strings, which would corrupt the accessible name.
+ */
+.neu-chart-label {
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Sticky table headers. `background-attachment: local` keeps them opaque over
+   scrolling rows while still letting a translucent panel show through at the
+   edges. */
+.neu-table-head {
+  background-color: var(--color-surface-deep);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* Reduced motion: collapse durations rather than removing animation, so state
+   changes stay perceivable to users who depend on that feedback. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .neu-btn:active:not(:disabled),
+  .neu-btn[aria-pressed="true"] {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Print — bills have to come off a printer.
+   --------------------------------------------------------------------------
+   Only the receipt body survives. Navigation, dock, buttons and every other
+   screen element are removed, because a shop prints bills and nothing else —
+   a stray toolbar in the middle of a thermal receipt makes it unusable.
+   ========================================================================== */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    background-image: none !important;
+    color: #000 !important;
+  }
+
+  .print-area {
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+}
