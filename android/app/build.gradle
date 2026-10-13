@@ -18,8 +18,11 @@ android {
         applicationId "in.kiranatrack.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        // versionCode must strictly increase for an update to install over an
+        // existing copy — Android refuses a downgrade, and refuses an equal code
+        // with a different APK. versionName is what a human reads.
+        versionCode 2
+        versionName "1.0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

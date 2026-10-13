@@ -71,11 +71,15 @@ npm run build
 npm run lint
 ```
 
-First run seeds a demo shop — 27 products, three months of bills with weekday
-and festival structure, three supplier deliveries, and a handful of deliberate
-problems (an expired batch, an item priced below cost, a dead line, a fast seller
-at zero) so the advisor has something true to report. Clear it in one tap from
-Settings.
+Your shop starts **empty**. Nothing is pre-loaded — no sample products, no
+example bills. A shop owner installing this opens their own till, and finding
+1,144 bills they never rang under someone else's shop name would be worse than
+a blank screen.
+
+A sample shop (27 products, three months of bills, some expiring stock and a few
+deliberate mistakes) is one tap away on the dashboard or in Settings if you want
+to see what the charts and the advisor do before entering real data. Clear it
+again in one tap.
 
 ### Android APK
 

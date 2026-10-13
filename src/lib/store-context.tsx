@@ -21,7 +21,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   type ReactNode,
 } from "react";
@@ -33,7 +32,6 @@ import {
 import { buildDemoDatabase } from "./seed";
 import {
   clearAllData,
-  readKey,
   storageAvailable,
   useHydrated,
   usePersistentState,
@@ -46,6 +44,7 @@ import {
   emptyDatabase,
   recordPurchase as recordPurchaseAction,
   recordSale as recordSaleAction,
+  SAMPLE_SHOP_NAME,
   setExpiry as setExpiryAction,
   setPrice as setPriceAction,
   setReorderPoint as setReorderPointAction,
@@ -103,6 +102,14 @@ interface StoreContextValue {
   clearEventLog: () => ActionResult;
   /** Replace every slice at once, used by backup restore. */
   replaceAll: (data: Database) => void;
+  /**
+   * Wipe everything and return to a genuinely empty shop.
+   *
+   * Distinct from `eraseEverything` only in intent — both clear all five
+   * slices. Kept separate so the call site reads as what it is: someone
+   * removing sample data they never entered, not someone discarding a ledger.
+   */
+  clearSampleData: () => ActionResult;
   loadDemoData: () => void;
   eraseEverything: () => void;
 }
@@ -158,36 +165,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const persistent = hydrated ? storageAvailable() : true;
 
   /*
-   * First-run seed.
+   * No first-run seeding.
    *
-   * Deferred to a microtask rather than run synchronously in an effect body.
-   * Two reasons: it must not run before the stored slices have been adopted, or
-   * it would overwrite real data with the demo shop; and doing external writes
-   * during the hydration commit blocks that commit for no reason. By the time a
-   * microtask runs, the stored values are already adopted and the decision below
-   * is made against the real data.
+   * Earlier builds loaded a demo shop on first open, so the charts and the
+   * advisor had something to show. That was wrong for the app's actual user: a
+   * shop owner installing this opens their own till, and finding 1,144 bills
+   * they never rung — under someone else's shop name — is a credibility
+   * problem no empty state is worth. The app now starts empty and says so.
+   *
+   * The sample shop still exists and is still one tap away in Settings, for
+   * anyone who wants to see the app full before committing their own data.
    */
-  useEffect(() => {
-    if (!hydrated) return;
-
-    queueMicrotask(() => {
-      const hasAnyRecord =
-        readKey<Product[]>("products", NO_PRODUCTS).length > 0 ||
-        readKey<Sale[]>("sales", NO_SALES).length > 0;
-
-      if (hasAnyRecord) return;
-      if (!readKey<Settings>("settings", DEFAULT_SETTINGS).demoDataOn) return;
-
-      const demo = buildDemoDatabase();
-      setProducts(demo.products);
-      setSales(demo.sales);
-      setPurchases(demo.purchases);
-      setEvents(demo.events);
-      // The demo profile is written too, so the app does not open showing
-      // "My Kirana Store" over a shop full of somebody else's stock.
-      setSettings(demo.settings);
-    });
-  }, [hydrated, setProducts, setSales, setPurchases, setEvents, setSettings]);
 
   /**
    * Apply a pure mutation to the assembled database and write back only the
@@ -297,7 +285,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [setProducts, setSales, setPurchases, setEvents, setSettings],
   );
 
-  const loadDemoData = useCallback(() => {    const demo = buildDemoDatabase();
+  const loadDemoData = useCallback(() => {
+    const demo = buildDemoDatabase();
     setProducts(demo.products);
     setSales(demo.sales);
     setPurchases(demo.purchases);
@@ -315,6 +304,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSettings(blank.settings);
   }, [setProducts, setSales, setPurchases, setEvents, setSettings]);
 
+  const clearSampleData = useCallback((): ActionResult => {
+    // Destroying anything genuinely the owner's is why this only ever runs where
+    // the dashboard has already established the data is the sample shop.
+    // `eraseEverything` and this share one implementation deliberately — two
+    // subtly different wipes would be two subtly different bugs.
+    eraseEverything();
+    return { ok: true, message: "Sample shop cleared. Your shop starts empty." };
+  }, [eraseEverything]);
+
   const productById = useCallback(
     (id: string) => products.find((p) => p.id === id),
     [products],
@@ -325,9 +323,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [products],
   );
 
+  /*
+   * Whether the shop on screen is the bundled sample.
+   *
+   * Judged on the sample shop's own identity rather than on the settings flag,
+   * because the flag says "I am allowed to seed" while this says "what is
+   * actually loaded" — and only the second one can drive a destructive
+   * "clear the sample data" button.
+   *
+   * The name is a deliberate fingerprint. If the owner has renamed the shop, the
+   * sample is no longer recognisable as the sample, and the safest reading is
+   * that it is now theirs.
+   */
   const isDemo = useMemo(
-    () => settings.profile.name === "Sharma General Store" && settings.demoDataOn === false,
-    [settings.profile.name, settings.demoDataOn],
+    () => products.length > 0 && settings.profile.name === SAMPLE_SHOP_NAME,
+    [products.length, settings.profile.name],
   );
 
   const value = useMemo<StoreContextValue>(
@@ -356,6 +366,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateSettings,
       clearEventLog,
       replaceAll,
+      clearSampleData,
       loadDemoData,
       eraseEverything,
     }),
@@ -364,7 +375,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       productById, stockTotalValue, addProduct, updateProduct, archiveProduct,
       recordSale, recordPurchase, writeOff, setExpiry, setReorderPoint,
       changePrice, setPrice, updateSettings, clearEventLog, replaceAll,
-      loadDemoData, eraseEverything,
+      clearSampleData, loadDemoData, eraseEverything,
     ],
   );
 

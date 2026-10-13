@@ -526,11 +526,13 @@ export default function SettingsPage() {
 
           <Card className="space-y-3">
             <p className="font-display text-base font-bold text-ink">
-              Start over
+              Sample shop
             </p>
             <p className="text-sm font-medium leading-relaxed text-ink-muted">
-              Load the sample shop again, or erase everything and start from a
-              blank register.
+              A demo with three months of bills, some expiring stock and a few
+              deliberate mistakes, so you can see what the advisor catches. Your
+              shop starts empty — this is only here if you want to look at a
+              full one first.
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -538,7 +540,7 @@ export default function SettingsPage() {
                 onClick={() => setConfirmDemo(true)}
                 className="neu-btn neu-btn-sm"
               >
-                Load sample shop
+                Load the sample shop
               </button>
               <button
                 type="button"

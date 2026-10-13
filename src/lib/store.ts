@@ -53,9 +53,27 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultTaxRate: 5,
   dayStart: "08:00",
   lowStockOn: true,
-  demoDataOn: true,
+  /**
+   * The sample shop is never loaded automatically.
+   *
+   * Earlier builds seeded it on first open so the charts and the advisor had
+   * something to show. A real shop owner installing this finds their own till,
+   * and opening onto 1,144 bills they never rang under someone else's shop name
+   * is a credibility problem no demo is worth. It stays one tap away in Settings
+   * for anyone who wants to look at a full shop first.
+   */
+  demoDataOn: false,
   ai: { provider: null, apiKey: "", model: "", enabled: false },
 };
+
+/**
+ * The sample shop's name.
+ *
+ * Doubles as the fingerprint for "this data is not yours" — see the `isDemo`
+ * derivation in `store-context.tsx`. Defined once here so the seed and the
+ * detector cannot disagree about what the sample is called.
+ */
+export const SAMPLE_SHOP_NAME = "Sharma General Store";
 
 export function emptyDatabase(): Database {
   return {

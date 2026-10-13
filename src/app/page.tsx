@@ -17,7 +17,7 @@
  */
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { AdvisorPreview } from "@/components/Advisor";
 import { ChartCard, Donut, Sparkline } from "@/components/Charts";
@@ -29,12 +29,14 @@ import {
   Clock,
   Receipt,
   Rupee,
+  Trash,
   TrendingUp,
   Truck,
 } from "@/components/Icons";
 import { AttributionBar, SiteFooter } from "@/components/Attribution";
 import {
   Card,
+  ConfirmDialog,
   EmptyState,
   Notice,
   PageHeader,
@@ -62,6 +64,15 @@ import type { StockHealth } from "@/lib/types";
 export default function DashboardPage() {
   const store = useStore();
   const { products, sales, settings, hydrated, persistent, isDemo } = store;
+
+  /**
+   * Clearing the sample is destructive, so it asks first.
+   *
+   * The banner is keyed on recognising the sample shop's name, and a name is
+   * something the owner could have typed into Settings by coincidence — so the
+   * dialog states plainly what goes rather than just doing it.
+   */
+  const [confirmingSample, setConfirmingSample] = useState(false);
 
   const day = useMemo(() => tradingDay(settings), [settings]);
 
@@ -103,20 +114,56 @@ export default function DashboardPage() {
         <PageHeader
           eyebrow="Your shop"
           title="Dashboard"
-          description="Add your first product and the dashboard fills in from there — takings, expiring stock and what to reorder."
+          description="Nothing is set up yet. Add what you sell, and the takings, expiry warnings and business advice fill in from there."
         />
+
         <div className="mt-8">
           <EmptyState
-            title="No products yet"
-            description="Stock is the starting point for everything here. Add what is on your shelf, and KiranaTrack will track its expiry and margin from then on."
+            title="Start with your stock"
+            description="Add the items on your shelf and KiranaTrack takes it from there — it watches their expiry dates, tracks the margin on every sale, and tells you what to reorder. Everything stays on this device."
             icon={<Box size={30} />}
             action={
-              <Link href="/stock" className="neu-btn neu-btn-primary">
-                <Box size={18} /> Add your first product
-              </Link>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Link href="/stock" className="neu-btn neu-btn-primary">
+                  <Box size={18} /> Add your first product
+                </Link>
+                <Link href="/billing" className="neu-btn">
+                  <Cart size={18} /> Ring up a bill
+                </Link>
+              </div>
             }
           />
         </div>
+
+        {/*
+          The sample shop, offered rather than imposed.
+
+          It is genuinely the fastest way to understand what the charts and the
+          advisor will do, and it was removed from first-run only because a shop
+          owner opening onto someone else's 1,144 bills is worse than an empty
+          screen. One tap, clearly labelled, and nothing merges with real data
+          until they choose to load it.
+        */}
+        <Card className="mt-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-lg font-bold text-ink">
+              Want to see it full first?
+            </p>
+            <p className="mt-1 text-sm font-medium leading-relaxed text-ink-muted">
+              Load a sample shop with three months of bills, some expiring stock
+              and a few mistakes — so you can see what the advisor catches. You
+              can clear it in one tap afterwards.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={store.loadDemoData}
+            className="neu-btn shrink-0"
+          >
+            Load the sample shop
+          </button>
+        </Card>
+
         <SiteFooter />
       </>
     );
@@ -147,11 +194,23 @@ export default function DashboardPage() {
       )}
 
       {isDemo && (
-        <div className="mt-6">
-          <Notice tone="brand">
-            This is a sample shop so you can see how the app works. Everything
-            here can be cleared in one tap from Settings.
-          </Notice>
+        <div className="neu-inset mt-6 flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-base font-bold text-ink">
+              You are looking at a sample shop
+            </p>
+            <p className="mt-1 text-sm font-medium text-ink-muted">
+              These products and bills are not yours — they are here so the
+              charts have something to show. Clear them and start with your own.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setConfirmingSample(true)}
+            className="neu-btn neu-btn-primary shrink-0"
+          >
+            <Trash size={17} weight="bold" /> Clear sample data
+          </button>
         </div>
       )}
 
@@ -380,6 +439,19 @@ export default function DashboardPage() {
       <div className="mt-10">
         <AttributionBar />
       </div>
+
+      <ConfirmDialog
+        open={confirmingSample}
+        onClose={() => setConfirmingSample(false)}
+        onConfirm={() => {
+          store.clearSampleData();
+          setConfirmingSample(false);
+        }}
+        title="Clear the sample shop"
+        body={`This removes all ${live.length} sample products, ${sales.length} sample bills and every restock, and resets your shop name and details to blank. Nothing here is yours, so nothing of yours is lost — but it cannot be undone, and if you have started entering real data into this copy, that goes too.`}
+        confirmLabel="Clear it all"
+        destructive
+      />
 
       <SiteFooter />
     </>
