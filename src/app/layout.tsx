@@ -3,9 +3,9 @@ import { Inter, Teko } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { AppMark, AppNav } from "@/components/AppNav";
+import { UpdatePrompt, WelcomePopup } from "@/components/AppMoments";
 import { SettingsButton } from "@/components/SettingsButton";
 import { StoreProvider } from "@/lib/store-context";
-import { STUDIO } from "@/lib/studio";
 
 import "./globals.css";
 
@@ -39,9 +39,9 @@ export const metadata: Metadata = {
   description:
     "A complete shop operating system for Indian kirana stores: GST billing, stock control, expiry tracking, and an advisor that reads your own numbers and tells you what to do next. Works offline, on your own device.",
   applicationName: "KiranaTrack",
-  authors: [{ name: `${STUDIO.name} — ${STUDIO.owner.name}` }],
-  creator: STUDIO.owner.name,
-  publisher: STUDIO.owner.name,
+  authors: [{ name: "Smalltown studio — Rajeshwar Shingade" }],
+  creator: "Rajeshwar Shingade",
+  publisher: "Rajeshwar Shingade",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -110,6 +110,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </main>
           </div>
         </StoreProvider>
+
+        {/*
+          Mounted once, outside the provider, so they survive navigation rather
+          than remounting on every route change. Both read localStorage and
+          nothing else, so neither needs the store.
+        */}
+        <WelcomePopup />
+        <UpdatePrompt />
       </body>
     </html>
   );

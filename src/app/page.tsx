@@ -33,7 +33,7 @@ import {
   TrendingUp,
   Truck,
 } from "@/components/Icons";
-import { AttributionBar, SiteFooter } from "@/components/Attribution";
+import { SiteFooter } from "@/components/Attribution";
 import {
   Card,
   ConfirmDialog,
@@ -434,10 +434,6 @@ export default function DashboardPage() {
           hint={`${live.reduce((sum, p) => sum + p.qty, 0)} units on hand`}
           icon={<Box size={20} />}
         />
-      </div>
-
-      <div className="mt-10">
-        <AttributionBar />
       </div>
 
       <ConfirmDialog

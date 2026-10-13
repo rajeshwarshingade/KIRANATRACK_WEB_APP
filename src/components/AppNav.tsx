@@ -27,7 +27,8 @@ import {
   Receipt,
   Truck,
 } from "./Icons";
-import { STUDIO } from "@/lib/studio";
+import { STUDIO_NAME, OWNER_NAME } from "./Attribution";
+import { APP_VERSION } from "@/lib/app-info";
 
 /** Everything reachable. The rail renders all of it. */
 const ALL_ITEMS = [
@@ -111,9 +112,14 @@ export function AppNav() {
 /**
  * Wordmark used by the fixed top bar.
  *
- * The attribution line is part of the mark rather than a separate header
- * element: this app ships as a standalone APK, so the credit has to travel with
- * the identity onto the home screen.
+ * Carries the app name, the studio credit and the build version. The version
+ * is here rather than only in Settings because this is the one line visible on
+ * every screen — when someone reports a bug, the first question is always
+ * which version, and it should not need a trip through Settings to answer.
+ *
+ * The credit is part of the mark rather than a separate header element: this
+ * app ships as a standalone APK with no store page attached, so the attribution
+ * has to travel with the identity onto the home screen.
  */
 export function AppMark() {
   return (
@@ -124,9 +130,12 @@ export function AppMark() {
       <span className="leading-tight">
         <span className="block font-display text-xl font-bold tracking-wide text-ink">
           KiranaTrack
+          <span className="ml-1.5 align-middle font-sans text-[0.7rem] font-bold tracking-wide text-ink-faint">
+            v{APP_VERSION}
+          </span>
         </span>
         <span className="block text-[0.68rem] font-medium tracking-wide text-ink-faint">
-          {STUDIO.attribution}
+          {STUDIO_NAME} · {OWNER_NAME}
         </span>
       </span>
     </Link>

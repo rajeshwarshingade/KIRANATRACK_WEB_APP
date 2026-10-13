@@ -19,11 +19,10 @@
 
 import { useMemo, useRef, useState } from "react";
 
-import { SiteFooter, StudioCard } from "@/components/Attribution";
+import { SiteFooter } from "@/components/Attribution";
 import {
   Download,
   Info,
-  Shield,
   Sparkle,
   Trash,
   Upload,
@@ -45,10 +44,18 @@ import {
   parseBackup,
   serialiseBackup,
 } from "@/lib/backup";
+import { StudioCard } from "@/components/Attribution";
 import { AI_PROVIDERS, defaultModelFor } from "@/lib/ai";
+import {
+  APP_BLURB,
+  APP_LABEL,
+  APP_URL,
+  APP_VERSION,
+  APP_VERSION_CODE,
+} from "@/lib/app-info";
+import { checkForUpdate } from "@/lib/update";
 import { formatBytes, storageFootprint } from "@/lib/storage";
 import { useStore } from "@/lib/store-context";
-import { STUDIO } from "@/lib/studio";
 import type { Database } from "@/lib/types";
 
 export default function SettingsPage() {
@@ -60,6 +67,33 @@ export default function SettingsPage() {
   const [confirmDemo, setConfirmDemo] = useState(false);
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const [restoreSummary, setRestoreSummary] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [updateResult, setUpdateResult] = useState<string | null>(null);
+
+  /**
+   * Manual update check.
+   *
+   * The automatic one on launch is deliberately quiet — a banner the owner may
+   * have walked past. This button is for the moment they *want* to know, and it
+   * reports either way rather than failing silently, because at this point
+   * they are actively asking.
+   */
+  async function handleCheckUpdate() {
+    setChecking(true);
+    setUpdateResult(null);
+
+    const result = await checkForUpdate(APP_VERSION, APP_VERSION_CODE);
+
+    setUpdateResult(
+      result.state === "outdated" || result.state === "unsupported"
+        ? `Version ${result.entry.version} is ready.`
+        : result.state === "current"
+          ? "You are on the latest version."
+          : "Could not reach the update service. Check again when you are online.",
+    );
+
+    setChecking(false);
+  }
 
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -557,21 +591,20 @@ export default function SettingsPage() {
       {/* About. */}
       <section className="mt-9">
         <SectionLabel>About</SectionLabel>
-        <div className="mt-4">
-          <StudioCard />
-        </div>
-
         <Card className="mt-4">
           <div className="flex items-start gap-4">
             <span className="neu-well grid size-11 shrink-0 place-items-center text-brand">
               <Info size={21} />
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="font-display text-lg font-bold text-ink">
-                KiranaTrack
+                {APP_LABEL} v{APP_VERSION}
+                <span className="tabular ml-2 font-sans text-xs font-semibold text-ink-faint">
+                  build {APP_VERSION_CODE}
+                </span>
               </p>
               <p className="mt-1.5 text-sm font-medium leading-relaxed text-ink-muted">
-                Version 1.0 · Runs entirely on this device with no account, no
+                {APP_BLURB} Runs entirely on this device with no account, no
                 server and no tracking. Works with the internet off, which is why
                 the advisor does its own analysis rather than depending on a
                 hosted one.
@@ -579,22 +612,42 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-5 flex items-start gap-2 border-t border-shadow-dark/20 pt-5 text-sm font-medium leading-relaxed text-ink-muted">
-            <Shield size={17} className="mt-0.5 shrink-0 text-success" />
-            <span>
-              {STUDIO.copyright} Built and maintained as part of{" "}
-              <a
-                href={STUDIO.links.studio}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-bold text-brand hover:underline"
-              >
-                {STUDIO.name}
-              </a>
-              .
-            </span>
+          <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-shadow-dark/20 pt-5">
+            <button
+              type="button"
+              onClick={handleCheckUpdate}
+              disabled={checking}
+              className="neu-btn neu-btn-sm"
+            >
+              <Download size={15} weight="bold" />
+              {checking ? "Checking…" : "Check for updates"}
+            </button>
+
+            <a
+              href={APP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="neu-btn neu-btn-sm"
+            >
+              <Info size={15} weight="bold" /> App page
+            </a>
+
+            {updateResult && (
+              <span className="text-sm font-semibold text-ink-muted">
+                {updateResult}
+              </span>
+            )}
           </div>
+
+          <p className="mt-4 text-xs font-medium leading-relaxed text-ink-faint">
+            Installing an update over the top of the existing app keeps
+            everything you have recorded. Nothing is reset and nothing is lost.
+          </p>
         </Card>
+
+        <div className="mt-4">
+          <StudioCard />
+        </div>
       </section>
 
       <ConfirmDialog

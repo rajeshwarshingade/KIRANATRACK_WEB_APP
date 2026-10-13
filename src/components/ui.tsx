@@ -335,17 +335,25 @@ export function EmptyState({
  * a shaped skeleton that gap reads as a broken layout, so this mirrors the real
  * page rhythm — heading block, stat row, then a panel — rather than rendering
  * one empty spacer followed by floating cards.
+ *
+ * The shimmer is a sweep of light across the placeholder, which is what a
+ * loading state actually looks like. It is `transform`-driven so it runs on the
+ * compositor, and it is disabled entirely under `prefers-reduced-motion` by the
+ * blanket rule at the end of globals.css — a shimmer is exactly the kind of
+ * looping motion that setting exists to stop.
  */
 export function PageSkeleton({ stats = 4 }: { stats?: number }) {
   return (
     <div className="flex flex-col gap-8" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading your shop data…</span>
 
+      <Loader label="Loading your shop" />
+
       {/* Heading block */}
       <div className="flex flex-col gap-3">
-        <div className="neu-inset h-5 w-24" />
-        <div className="neu-inset h-9 w-64 max-w-full" />
-        <div className="neu-inset h-4 w-full max-w-md" />
+        <Skeleton className="h-5 w-24" />
+        <Skeleton className="h-9 w-64 max-w-full" />
+        <Skeleton className="h-4 w-full max-w-md" />
       </div>
 
       {/* Stat row. Uses responsive classes rather than an inline
@@ -353,11 +361,59 @@ export function PageSkeleton({ stats = 4 }: { stats?: number }) {
           375px phone and clip the tile labels. */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {Array.from({ length: stats }, (_, i) => (
-          <div key={i} className="neu-raised h-24" />
+          <Skeleton key={i} className="h-24" />
         ))}
       </div>
 
-      <div className="neu-raised h-72" />
+      <Skeleton className="h-72" />
+    </div>
+  );
+}
+
+/** One shimmering placeholder block. */
+function Skeleton({ className = "" }: { className?: string }) {
+  return (
+    <div className={`neu-raised relative overflow-hidden ${className}`}>
+      <Shimmer />
+    </div>
+  );
+}
+
+/**
+ * The sweep.
+ *
+ * A single oversized gradient translated across the block. Animating `transform`
+ * rather than `background-position` keeps it off the main thread, which is what
+ * stops a loading state from being the thing that makes the app feel slow.
+ */
+function Shimmer() {
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent motion-safe:animate-[shimmer_1.6s_ease-in-out_infinite]"
+    />
+  );
+}
+
+/**
+ * Full-screen loader, used on first paint while localStorage is adopted.
+ *
+ * `motion-safe:` gates the animation so a user who has asked for reduced motion
+ * gets a calm static indicator rather than a pulsing screen.
+ */
+export function Loader({ label = "Loading" }: { label?: string }) {
+  return (
+    <div className="flex flex-col items-center gap-4 py-16" role="status">
+      <span className="relative grid size-14 place-items-center">
+        {/* Two rings at different scales and speeds, which reads as motion
+            without needing a frame-accurate animation. */}
+        <span className="absolute inset-0 rounded-full border-[3px] border-shadow-dark/30 motion-safe:animate-[spin_1.1s_linear_infinite]" />
+        <span className="absolute inset-2 rounded-full border-[3px] border-brand/70 motion-safe:animate-[spin_1.7s_linear_infinite_reverse]" />
+        <span className="size-2 rounded-full bg-brand" />
+      </span>
+      <span className="text-sm font-semibold text-ink-muted">{label}…</span>
+      {/* Screen-reader users get the state without the spinning rings. */}
+      <span className="sr-only">{label}</span>
     </div>
   );
 }

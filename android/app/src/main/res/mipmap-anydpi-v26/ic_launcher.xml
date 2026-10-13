@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive launcher icon.
+
+  The foreground is a vector (`drawable/ic_launcher_foreground`) rather than
+  `@mipmap/ic_launcher_foreground`. The latter is the stock Capacitor mark that
+  `npx cap add android` generates, and shipping it means a released APK carries
+  a framework logo on the home screen.
+
+  `monochrome` is set so Android 13+ can tint the icon to the user's wallpaper
+  theme. It points at the same artwork, which is correct here because the icon
+  is a single flat silhouette in one colour — there is nothing to lose when the
+  system replaces the colour with its own.
+-->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background"/>
-    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+    <monochrome android:drawable="@drawable/ic_launcher_foreground"/>
 </adaptive-icon>

@@ -689,6 +689,32 @@
   z-index: 1;
 }
 
+/* ==========================================================================
+   Loading animation
+   --------------------------------------------------------------------------
+   Both keyframes drive `transform` only, so they run on the compositor and
+   never touch layout. That is the whole reason the sweep is a translated
+   gradient rather than an animated background-position: an animatable
+   background-position repaints on every frame, and a loading state that
+   repaints is the state that makes an app feel slow.
+
+   Both are gated by `motion-safe:` at the call site rather than here, because
+   `prefers-reduced-motion` has to disable the animation without removing the
+   element — a blank gap where a spinner was is worse than a static one.
+   ========================================================================== */
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Reduced motion: collapse durations rather than removing animation, so state
    changes stay perceivable to users who depend on that feedback. */
 @media (prefers-reduced-motion: reduce) {

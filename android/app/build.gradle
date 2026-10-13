@@ -21,8 +21,11 @@ android {
         // versionCode must strictly increase for an update to install over an
         // existing copy — Android refuses a downgrade, and refuses an equal code
         // with a different APK. versionName is what a human reads.
-        versionCode 2
-        versionName "1.0.1"
+        //
+        // Both must match src/lib/app-info.ts, which is where the app reads its
+        // own version from to decide whether an update is available.
+        versionCode 3
+        versionName "1.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

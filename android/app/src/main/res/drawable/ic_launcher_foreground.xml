@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  KiranaTrack launcher icon: a receipt with a rupee on it.
+
+  Why a vector and not the Capacitor default bitmap: the stock
+  `ic_launcher_foreground` shipped by `npx cap add android` is the generic
+  Capacitor mark, so a shipped APK carries a framework logo on the home
+  screen. A vector also stays sharp at every density without shipping nine
+  copies of the same artwork.
+
+  Drawn inside the 72x72 adaptive-icon safe zone (centred on 108x108), so no
+  part is clipped by a circular or squircle mask on any launcher. The receipt's
+  zig-zag foot stops at y=76 rather than running to the edge for that reason.
+
+  Colour is the studio's brand blue (#1E40AF) on the neumorphic surface
+  (#E3E9F2) that `ic_launcher_background` is already set to, so the icon and
+  the app's header mark are the same thing.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Receipt body, with a torn bottom edge. -->
+    <path
+        android:pathData="M34,28h40v48l-6.67,-4.6 -6.66,4.6 -6.67,-4.6 -6.67,4.6 -6.66,-4.6 -6.67,4.6z"
+        android:fillColor="#1E40AF"
+        android:fillAlpha="0.10" />
+
+    <path
+        android:pathData="M34,28h40v48l-6.67,-4.6 -6.66,4.6 -6.67,-4.6 -6.67,4.6 -6.66,-4.6 -6.67,4.6z"
+        android:strokeColor="#1E40AF"
+        android:strokeWidth="4"
+        android:strokeLineJoin="round" />
+
+    <!-- Rupee -->
+    <path
+        android:pathData="M45,40h18M45,49h18M55,40c0,4.8 -3.2,7.6 -8,7.6h-2l10,11.4"
+        android:strokeColor="#1E40AF"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
